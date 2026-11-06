@@ -20,6 +20,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.ecoleta_estabelecimento.components.footer.FooterScreen
 import com.example.ecoleta_estabelecimento.components.header.HeaderScreen
+import com.example.ecoleta_estabelecimento.components.layout.LayoutPadrao
+import com.example.ecoleta_estabelecimento.features.home.HomeScreen
+import com.example.ecoleta_estabelecimento.features.home.model.OfertaResumo
 import com.example.ecoleta_estabelecimento.ui.theme.Branco
 import com.example.ecoleta_estabelecimento.ui.theme.EcoletaEstabelecimentoTheme
 import com.example.ecoleta_estabelecimento.ui.theme.VerdeFundo
@@ -32,7 +35,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             EcoletaEstabelecimentoTheme {
                 Scaffold(modifier = Modifier.fillMaxSize(),containerColor = Branco) { innerPadding ->
-                    TelaInicial(
+                   TelaInicial(
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
@@ -41,51 +44,88 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// Composable temporário para testar o Header, conteúdo e Footer
+// Composable responsável por controlar a tela exibida
 @Composable
 fun TelaInicial(
     modifier: Modifier = Modifier
 ) {
 
-    // Guarda a tela selecionada no menu
+    // Controla temporariamente a rota selecionada
     var telaAtual by remember {
         mutableStateOf("home")
     }
 
-    // Organiza os componentes da tela
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Branco)
+    // Exibe o layout compartilhado das telas internas
+    LayoutPadrao(
+        modifier = modifier,
+        rotaAtual = telaAtual,
+        onNavigate = { rota ->
+            telaAtual = rota
+        },
+        onLogout = {
+            telaAtual = "login"
+        }
     ) {
 
-        // Exibe o Header
-        HeaderScreen(
-            rotaAtual = telaAtual,
-            onNavigate = { rota ->
-                telaAtual = rota
-            },
-            onLogout = {
-                telaAtual = "login"
-            }
-        )
+        // Exibe a tela correspondente à rota selecionada
+        when (telaAtual) {
 
-        // Conteúdo temporário da tela
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .background(VerdeFundo)
-        ) {
+            "home" -> HomeScreen(
+                ofertas = ofertasExemplo,
 
-            // Mostra a tela selecionada
-            Text(
-                text = "Tela atual: $telaAtual",
-                modifier = Modifier.padding(24.dp)
+                onCadastrarResiduo = {
+                    telaAtual = "residuos"
+                },
+                onVerTodasOfertas = {
+                    telaAtual = "coletas"
+                },
+                onVerOferta = { idOferta ->
+                    println("Oferta selecionada: $idOferta")
+                }
             )
-        }
 
-        // Exibe o Footer
-        FooterScreen()
+            // Telas temporárias para testar o menu
+            "residuos" -> item {
+                Text("Tela de Meus Resíduos")
+            }
+
+            "coletas" -> item {
+                Text("Tela de Coletas")
+            }
+
+            "historico" -> item {
+                Text("Tela de Histórico")
+            }
+
+            "perfil" -> item {
+                Text("Tela de Perfil")
+            }
+
+            "login" -> item {
+                Text("Tela de Login (teste)")
+            }
+        }
     }
 }
+
+// DADOS TEMPORÁRIOS PARA TESTAR OS CARDS DA HOME:
+val ofertasExemplo = listOf(
+    OfertaResumo(
+        id = 1,
+        nomeColetor = "XYZ Coletas",
+        material = "Vidro",
+        quantidadeKg = "15",
+        data = "27/08/2026",
+        valor = 150.00,
+        status = "ACEITA"
+    ),
+    OfertaResumo(
+        id = 2,
+        nomeColetor = "XYZ Coletas",
+        material = "Vidro",
+        quantidadeKg = "15",
+        data = "27/08/2026",
+        valor = 150.00,
+        status = "PENDENTE"
+    )
+)

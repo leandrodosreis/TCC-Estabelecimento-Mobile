@@ -21,11 +21,6 @@ import com.example.ecoleta_estabelecimento.ui.theme.VerdeFundo
 @Composable
 fun FooterScreen(modifier: Modifier = Modifier) {
 
-    // Define as cores do Footer
-    val fundo = Color(0xFFF0F9F4)
-    val corTexto = Color(0xFF9AA8A0)
-    val corLinha = Color(0xFFD3DED7)
-
     // Organiza a linha e os textos verticalmente
     Column(
         modifier = modifier
