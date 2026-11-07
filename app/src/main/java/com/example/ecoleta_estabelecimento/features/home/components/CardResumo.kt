@@ -72,7 +72,7 @@ fun CardResumo(
             ) {
                 Text(
                     text = valor,
-                    fontSize = 23.sp,
+                    fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,
                     color = VerdeEscuro
                 )

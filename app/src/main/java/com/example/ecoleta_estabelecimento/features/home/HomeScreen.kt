@@ -2,26 +2,22 @@ package com.example.ecoleta_estabelecimento.features.home
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ecoleta_estabelecimento.R
-import com.example.ecoleta_estabelecimento.components.footer.FooterScreen
 import com.example.ecoleta_estabelecimento.features.home.components.CardBoasVindas
 import com.example.ecoleta_estabelecimento.features.home.components.CardProximoPasso
 import com.example.ecoleta_estabelecimento.features.home.components.CardResumo
 import com.example.ecoleta_estabelecimento.features.home.components.SecaoOfertasRecebidas
+import com.example.ecoleta_estabelecimento.features.home.model.HomeResumo
 import com.example.ecoleta_estabelecimento.features.home.model.OfertaResumo
 import com.example.ecoleta_estabelecimento.ui.theme.HomeCardVerdeClaro
 import com.example.ecoleta_estabelecimento.ui.theme.nomeTela
@@ -29,8 +25,9 @@ import com.example.ecoleta_estabelecimento.ui.theme.subTitulo
 import com.example.ecoleta_estabelecimento.ui.theme.textoPainel
 
 fun LazyListScope.HomeScreen(
-    onCadastrarResiduo: () -> Unit = {},
+    resumo: HomeResumo?,
     ofertas: List<OfertaResumo>,
+    onCadastrarResiduo: () -> Unit = {},
     onVerTodasOfertas: () -> Unit = {},
     onVerOferta: (Int) -> Unit = {}
 ) {
@@ -73,7 +70,10 @@ fun LazyListScope.HomeScreen(
 
     // Card grande de boas-vindas
     item {
-        CardBoasVindas()
+        CardBoasVindas(
+            nomeEmpresa = resumo?.nomeEmpresa ?: "Estabelecimento",
+            quantidadeMateriais = resumo?.somaTotalQuantidade?.let { "$it kg" } ?: "-"
+        )
     }
 
     // Primeira linha da grade 2x2
@@ -85,7 +85,8 @@ fun LazyListScope.HomeScreen(
 
             // Resíduos disponíveis
             CardResumo(
-                valor = "05",
+                // resumo? - acessa o objeto somente se ele não for null
+                valor = resumo?.residuosDisponiveis?.toString()?: "-",
                 descricao = "Resíduos disponíveis",
                 icone = R.drawable.box_img,
                 modifier = Modifier.weight(1f)
@@ -93,7 +94,7 @@ fun LazyListScope.HomeScreen(
 
             // Quantidade de materiais
             CardResumo(
-                valor = "73 kg",
+                valor = resumo?.somaTotalQuantidade?.let { "$it kg" } ?: "-",
                 descricao = "Em materiais",
                 icone = R.drawable.materiais_img,
                 fundo = HomeCardVerdeClaro,
@@ -110,7 +111,7 @@ fun LazyListScope.HomeScreen(
         ) {
             // Ofertas recebidas
             CardResumo(
-                valor = "02",
+                valor = resumo?.ofertasRecebidas?.toString()?: "-",
                 descricao = "Ofertas recebidas",
                 icone = R.drawable.oferta_img,
                 modifier = Modifier.weight(1f)
@@ -118,7 +119,7 @@ fun LazyListScope.HomeScreen(
 
             // Coletas agendadas
             CardResumo(
-                valor = "03",
+                valor = resumo?.coletasAgendadas?.toString()?: "-",
                 descricao = "Coletas agendadas",
                 icone = R.drawable.calendario_img,
                 modifier = Modifier.weight(1f)
