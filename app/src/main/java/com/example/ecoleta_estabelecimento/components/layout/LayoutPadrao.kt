@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.example.ecoleta_estabelecimento.components.footer.FooterScreen
 import com.example.ecoleta_estabelecimento.components.header.HeaderScreen
@@ -36,7 +37,7 @@ fun LayoutPadrao(
     ) {
 
         // Header global fixo
-        HeaderScreen (
+        HeaderScreen(
             rotaAtual = rotaAtual,
             onNavigate = onNavigate,
             onLogout = onLogout
@@ -54,7 +55,7 @@ fun LayoutPadrao(
                 top = 40.dp,
                 bottom = 0.dp
             ),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            verticalArrangement = EspacamentoComFooter
         ) {
 
             // Conteúdo específico da tela
@@ -68,6 +69,44 @@ fun LayoutPadrao(
                     FooterScreen()
                 }
             }
+        }
+    }
+}
+
+private val EspacamentoComFooter = object : Arrangement.Vertical {
+
+    override val spacing = 20.dp
+
+    // Calcula onde cada item deve ficar
+    override fun Density.arrange(
+        totalSize: Int,
+        sizes: IntArray,
+        outPositions: IntArray
+    ) {
+        val espacamento = 20.dp.roundToPx() // Calculando o espaço ocupado
+        val alturaItens = sizes.sum() // Soma as alturas de todos os itens
+        // Calcula o espaço necessário entre os itens, .coerceAtLeast(0) garante que o resultado nunca seja negativo, inclusive se não houver nenhum item
+        val alturaEspacamentos = espacamento * (sizes.size - 1).coerceAtLeast(0)
+
+        // Faz o Footer descer
+        val espacoLivre = (
+                totalSize - alturaItens - alturaEspacamentos
+                ).coerceAtLeast(0)
+
+        var posicao = 0
+
+        // index: posição do item no array, começando em zero
+        // tamanho: altura do item atual, em pixels
+        sizes.forEachIndexed { index, tamanho ->
+            // Adiciona o espaço livre somente antes do Footer
+            // Responsável por empurrar o Footer para baixo
+            if (index == sizes.lastIndex) {
+                posicao += espacoLivre
+            }
+
+            // Adiciona todo o espaço livre à posição, ou seja, onde o Compose deve posicionar aquele item
+            outPositions[index] = posicao
+            posicao += tamanho + espacamento
         }
     }
 }
