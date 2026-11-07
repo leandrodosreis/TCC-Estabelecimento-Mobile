@@ -25,35 +25,45 @@ fun SecaoOfertasRecebidas(
     onVerTodas: () -> Unit = {},
     onVerOferta: (Int) -> Unit = {}
 ) {
-    Column (
+
+    // Exibe no máximo três ofertas
+    // Limita a exibição às três primeiras ofertas
+    val ofertasRecentes = ofertas.take(3)
+
+    Column(
         modifier = Modifier.fillMaxWidth()
     ) {
         // Identificação da seção
         Text(
             text = "MOVIMENTAÇÕES RECENTES",
-            fontSize = 13.sp,
+            fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
-            color = VerdePrincipal
+            color = VerdePrincipal,
+            letterSpacing = 0.5.sp
         )
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         // Título e ação para ver todas
-        Row (
+        Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
                 text = "Ofertas recebidas",
-                fontSize = 23.sp,
+                fontSize = 22.sp,
                 fontWeight = FontWeight.Medium,
-                color = VerdeEscuro
+                color = VerdeEscuro,
+                modifier = Modifier.weight(1f)
             )
 
             TextButton(
                 onClick = onVerTodas,
-                contentPadding = PaddingValues(0.dp)
+                contentPadding = PaddingValues(
+                    horizontal = 4.dp,
+                    vertical = 0.dp
+                )
             ) {
                 Text(
                     text = "VER TODAS →",
@@ -64,21 +74,19 @@ fun SecaoOfertasRecebidas(
             }
         }
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        // Exibe no máximo três ofertas
-        // Limita a exibição às três primeiras ofertas
-        val ofertasRecentes = ofertas.take(3)
+        // Lista de ofertas recentes
+        Column(
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
 
-        ofertasRecentes.forEachIndexed { index, oferta ->
+            ofertasRecentes.forEach { oferta ->
 
-            CardOfertaRecebida(
-                oferta = oferta,
-                onVerOferta = onVerOferta
-            )
-
-            if (index < ofertasRecentes.lastIndex) {
-                Spacer(modifier = Modifier.height(14.dp))
+                CardOfertaRecebida(
+                    oferta = oferta,
+                    onVerOferta = onVerOferta
+                )
             }
         }
     }
