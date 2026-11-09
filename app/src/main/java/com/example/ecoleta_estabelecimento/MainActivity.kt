@@ -22,6 +22,8 @@ import com.example.ecoleta_estabelecimento.features.home.model.OfertaResumo
 import com.example.ecoleta_estabelecimento.ui.theme.Branco
 import com.example.ecoleta_estabelecimento.ui.theme.EcoletaEstabelecimentoTheme
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.ecoleta_estabelecimento.features.residuos.ResiduosScreen
+import com.example.ecoleta_estabelecimento.features.residuos.ResiduosViewModel
 import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
@@ -49,11 +51,14 @@ fun TelaInicial(
 
     // Controla temporariamente a rota selecionada
     var telaAtual by remember {
-        mutableStateOf("home")
+        mutableStateOf("residuos")
     }
 
     // Obtém a ViewModel da Home
     val homeViewModel: HomeViewModel = viewModel()
+
+    // Obtém a ViewModel de Meus Resíduos
+    val residuosViewModel: ResiduosViewModel = viewModel()
 
     // Atualiza automaticamente os dados da Home
     LaunchedEffect(telaAtual) {
@@ -136,8 +141,10 @@ fun TelaInicial(
             }
 
             // Telas temporárias para testar o menu
-            "residuos" -> item {
-                Text("Tela de Meus Resíduos")
+            "residuos" -> {
+                ResiduosScreen(
+                    viewModel = residuosViewModel
+                )
             }
 
             "coletas" -> item {

@@ -60,7 +60,7 @@ fun LazyListScope.HomeScreen(
             Text(
                 text = "Acompanhe o resumo das suas atividades.",
                 fontWeight = FontWeight.Medium,
-                fontSize = 16.sp,
+                fontSize = 14.sp,
                 color = subTitulo
             )
 
