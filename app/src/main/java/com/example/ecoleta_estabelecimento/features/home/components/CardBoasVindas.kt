@@ -30,7 +30,10 @@ import com.example.ecoleta_estabelecimento.ui.theme.VerdeEscuro
 import com.example.ecoleta_estabelecimento.ui.theme.VerdePrincipal
 
 @Composable
-fun CardBoasVindas() {
+fun CardBoasVindas(
+    nomeEmpresa: String,
+    quantidadeMateriais: String
+) {
 
     // Card principal de boas-vindas
     Card(
@@ -70,7 +73,7 @@ fun CardBoasVindas() {
 
             // Saudação
             Text(
-                text = "Olá, Restaurante X.",
+                text = "Olá, $nomeEmpresa",
                 fontSize = 23.sp,
                 fontWeight = FontWeight.Medium,
                 color = VerdeEscuro
@@ -103,7 +106,7 @@ fun CardBoasVindas() {
                 Column {
 
                     Text(
-                        text = "73 kg",
+                        text = quantidadeMateriais,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = VerdeEscuro
