@@ -22,6 +22,8 @@ import com.example.ecoleta_estabelecimento.features.home.model.OfertaResumo
 import com.example.ecoleta_estabelecimento.ui.theme.Branco
 import com.example.ecoleta_estabelecimento.ui.theme.EcoletaEstabelecimentoTheme
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.ecoleta_estabelecimento.features.perfil.PefilViewModel
+import com.example.ecoleta_estabelecimento.features.perfil.PerfilScreen
 import com.example.ecoleta_estabelecimento.features.residuos.ResiduosScreen
 import com.example.ecoleta_estabelecimento.features.residuos.ResiduosViewModel
 import kotlinx.coroutines.delay
@@ -51,7 +53,7 @@ fun TelaInicial(
 
     // Controla temporariamente a rota selecionada
     var telaAtual by remember {
-        mutableStateOf("residuos")
+        mutableStateOf("perfil")
     }
 
     // Obtém a ViewModel da Home
@@ -59,6 +61,9 @@ fun TelaInicial(
 
     // Obtém a ViewModel de Meus Resíduos
     val residuosViewModel: ResiduosViewModel = viewModel()
+
+    // Obtém a ViewModel do Perfil
+    val perfilViewModel: PefilViewModel = viewModel()
 
     // Atualiza automaticamente os dados da Home
     LaunchedEffect(telaAtual) {
@@ -155,8 +160,10 @@ fun TelaInicial(
                 Text("Tela de Histórico")
             }
 
-            "perfil" -> item {
-                Text("Tela de Perfil")
+            "perfil" -> {
+                PerfilScreen(
+                    viewModel = perfilViewModel
+                )
             }
 
             "login" -> item {
