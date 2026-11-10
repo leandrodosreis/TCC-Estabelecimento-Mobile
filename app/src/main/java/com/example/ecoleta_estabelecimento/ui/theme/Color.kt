@@ -81,3 +81,6 @@ val NovoResiduoTexto = Color(0xFF244A45)
 val NovoResiduoDescricao = Color(0xFF687B80)
 val NovoResiduoCancelar = Color(0xFFE52B2B)
 val NovoResiduoConfirmar = Color(0xFF22AC78)
+
+// Cor utilizada nas mensagens e bordas de erro dos campos do formulário de novo resíduo.
+val NovoResiduoErro = Color(0xFFD32F2F)

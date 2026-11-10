@@ -1,10 +1,13 @@
 package com.example.ecoleta_estabelecimento.features.residuos.components
 
+import android.R.attr.singleLine
+import android.R.attr.text
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,13 +21,20 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.InputTransformation.Companion.keyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
@@ -36,35 +46,69 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.changedToDownIgnoreConsumed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
+import com.example.ecoleta_estabelecimento.features.residuos.ResiduosViewModel
 import com.example.ecoleta_estabelecimento.ui.theme.Branco
 import com.example.ecoleta_estabelecimento.ui.theme.NovoResiduoBordaCampo
 import com.example.ecoleta_estabelecimento.ui.theme.NovoResiduoCancelar
 import com.example.ecoleta_estabelecimento.ui.theme.NovoResiduoConfirmar
 import com.example.ecoleta_estabelecimento.ui.theme.NovoResiduoDescricao
+import com.example.ecoleta_estabelecimento.ui.theme.NovoResiduoErro
 import com.example.ecoleta_estabelecimento.ui.theme.NovoResiduoFundoCampo
 import com.example.ecoleta_estabelecimento.ui.theme.NovoResiduoTexto
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DialogNovoResiduo(
+    viewModel: ResiduosViewModel,
     onDismiss: () -> Unit
 ) {
-    // Guarda temporariamente os valores digitados no formulário
-    var tipoMaterial by remember { mutableStateOf("") }
-    var quantidade by remember { mutableStateOf("") }
-    var dataDisponivel by remember { mutableStateOf("") }
-    var horario by remember { mutableStateOf("") }
-    var observacao by remember { mutableStateOf("") }
+    // Guarda o ID do material escolhido, o backend receberá esse ID, não o nome
+    var idTipoMaterial by remember {
+        mutableStateOf<Int?>(null)
+    }
 
+    // Controla se a lista de materiais está aberta
+    var menuMaterialExpandido by remember {
+        mutableStateOf(false)
+    }
+
+    // Busca o nome correspondente ao ID selecionado, esse nome será exibido no campo
+    val nomeMaterialSelecionado = viewModel.tiposMateriais
+        .firstOrNull { it.idTipoMaterial == idTipoMaterial }
+        ?.material ?: ""
+
+    var quantidade by remember { mutableStateOf("") }
+
+    // Guarda a data digitada e a posição do cursor, permitindo aplicar a máscara sem perder o controle da edição
+    var dataDisponivel by remember {
+        mutableStateOf(TextFieldValue(""))
+    }
+
+    // Controla se o calendário está aberto
+    var selecionarData by remember { mutableStateOf(false) }
+
+    // Guarda os horários selecionados pelo relógio.
+    var horarioInicial by remember { mutableStateOf("") }
+    var horarioFinal by remember { mutableStateOf("") }
+
+    // Controla qual seletor está aberto.
+    var selecionarHorarioInicial by remember { mutableStateOf(false) }
+    var selecionarHorarioFinal by remember { mutableStateOf(false) }
+
+    var observacao by remember { mutableStateOf("") }
 
     // Dialog cria uma janela sobre a tela atual
     // O Android escurece automaticamente o fundo
@@ -83,6 +127,13 @@ fun DialogNovoResiduo(
         val focusManager = LocalFocusManager.current
         val keyboardController = LocalSoftwareKeyboardController.current
 
+        // Verifica automaticamente o intervalo sempre que os horários mudarem, só mostra erro quando ambos estiverem preenchidos
+        val erroIntervaloHorario =
+            horarioInicial.isNotBlank() && horarioFinal.isNotBlank() && !MaskResiduo.intervaloHorarioValido(
+                horarioInicial,
+                horarioFinal
+            )
+
         // Fundo branco e cantos arredondados do popup
         Surface(
             modifier = Modifier
@@ -97,23 +148,6 @@ fun DialogNovoResiduo(
                 modifier = Modifier
                     .heightIn(max = 700.dp)
                     .verticalScroll(rememberScrollState())
-                    // Detecta toques dentro do popup
-                    .pointerInput(focusManager, keyboardController) {
-                        awaitEachGesture {
-
-                            // Detecta o toque antes de ele ser processado pelos componentes
-                            awaitFirstDown(
-                                requireUnconsumed = false,
-                                pass = PointerEventPass.Initial
-                            )
-
-                            // Remove o foco do campo atualmente selecionado
-                            focusManager.clearFocus(force = true)
-
-                            // Esconde o teclado virtual
-                            keyboardController?.hide()
-                        }
-                    }
                     .padding(
                         top = 30.dp,
                         bottom = 15.dp,
@@ -160,23 +194,56 @@ fun DialogNovoResiduo(
                     color = NovoResiduoTexto
                 )
 
-                OutlinedTextField(
-                    value = tipoMaterial,
-                    onValueChange = { tipoMaterial = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(55.dp),
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
-                    trailingIcon = {
-                        // Futuramente abrirá o dropdown de materiais
-                        Icon(
-                            imageVector = Icons.Default.KeyboardArrowDown,
-                            contentDescription = "Selecionar material"
-                        )
-                    },
-                    colors = coresCamposNovoResiduo()
-                )
+                // Abre a lista de materiais cadastrados na ViewModel
+                ExposedDropdownMenuBox(
+                    expanded = menuMaterialExpandido,
+                    onExpandedChange = { menuMaterialExpandido = it },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    // Campo que mostra o nome do material escolhido.
+                    OutlinedTextField(
+                        value = nomeMaterialSelecionado,
+                        onValueChange = {},
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(55.dp),
+                        // Impede digitação manual
+                        readOnly = true,
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        placeholder = {
+                            Text("Selecione um material")
+                        },
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(
+                                expanded = menuMaterialExpandido
+                            )
+                        },
+                        colors = coresCamposNovoResiduo()
+                    )
+                    // Exibe os materiais definidos na ViewModel.
+                    ExposedDropdownMenu(
+                        expanded = menuMaterialExpandido,
+                        onDismissRequest = {
+                            menuMaterialExpandido = false
+                        }
+                    ) {
+                        viewModel.tiposMateriais.forEach { material ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(material.material)
+                                },
+                                onClick = {
+                                    // Guarda o ID real do material selecionado.
+                                    idTipoMaterial = material.idTipoMaterial
+
+                                    // Fecha o dropdown.
+                                    menuMaterialExpandido = false
+                                }
+                            )
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(4.dp))
 
@@ -189,10 +256,22 @@ fun DialogNovoResiduo(
 
                 OutlinedTextField(
                     value = quantidade,
-                    onValueChange = { quantidade = it },
+                    onValueChange = { novoValor ->
+                        // Verifica se o novo texto respeita o formato e o limite máximo de 9999,99
+                        if (MaskResiduo.quantidadeDigitadaValida(novoValor)) {
+                            // Mantém o texto exatamente como o usuário digitou, assim, o cursor não fica pulando durante a edição
+                            quantidade = novoValor
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(55.dp),
+                        .height(55.dp)
+                        .onFocusChanged { focusState ->
+                            // Quando o usuário sai do campo, formata a quantidade com duas casas decimais
+                            if (!focusState.isFocused && quantidade.isNotBlank()) {
+                                quantidade = MaskResiduo.formatarQuantidade(quantidade)
+                            }
+                        },
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
                     keyboardOptions = KeyboardOptions(
@@ -212,7 +291,36 @@ fun DialogNovoResiduo(
 
                 OutlinedTextField(
                     value = dataDisponivel,
-                    onValueChange = { dataDisponivel = it },
+                    onValueChange = { novoValor ->
+
+                        // Obtém o texto digitado antes de aplicar a máscara
+                        val textoDigitado = novoValor.text
+
+                        // Verifica se o usuário está apagando caracteres
+                        val apagando = textoDigitado.length < dataDisponivel.text.length
+
+                        // Se o usuário apagou uma barra no final, remove também o número anterior para não recriar a barra
+                        val textoParaFormatar =
+                            if (apagando && dataDisponivel.text.endsWith("/") && textoDigitado == dataDisponivel.text.dropLast(
+                                    1
+                                )
+                            ) {
+                                textoDigitado.dropLast(1)
+                            } else {
+                                textoDigitado
+                            }
+
+                        // Aplica a máscara corrigida
+                        // Se o dia digitado for inválido, mantém o valor anterior, assim, o usuário não consegue inserir 32, 33, 34 etc
+                        val formatado =
+                            MaskResiduo.formatarData(textoParaFormatar) ?: dataDisponivel.text
+
+                        // Atualiza o campo e mantém o cursor no final
+                        dataDisponivel = TextFieldValue(
+                            text = formatado,
+                            selection = TextRange(formatado.length)
+                        )
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(55.dp),
@@ -225,11 +333,17 @@ fun DialogNovoResiduo(
                         keyboardType = KeyboardType.Number
                     ),
                     trailingIcon = {
-                        // O calendário será conectado na próxima etapa
-                        Icon(
-                            imageVector = Icons.Default.DateRange,
-                            contentDescription = "Abrir calendário"
-                        )
+                        // Permite abrir o calendário ao tocar no ícone
+                        IconButton(
+                            onClick = {
+                                selecionarData = true
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.DateRange,
+                                contentDescription = "Abrir calendário"
+                            )
+                        }
                     },
                     colors = coresCamposNovoResiduo()
                 )
@@ -243,19 +357,80 @@ fun DialogNovoResiduo(
                     color = NovoResiduoTexto
                 )
 
-                OutlinedTextField(
-                    value = horario,
-                    onValueChange = { horario = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(55.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true,
-                    placeholder = {
-                        Text("__:__ / __:__")
-                    },
-                    colors = coresCamposNovoResiduo()
-                )
+                // Organiza os horários inicial e final lado a lado
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+
+                    // Campo do horário inicial
+                    Box(modifier = Modifier.weight(1f)) {
+
+                        OutlinedTextField(
+                            value = horarioInicial,
+                            onValueChange = {},
+                            readOnly = true,
+                            // Ativa a aparência de erro quando o intervalo é inválido
+                            isError = erroIntervaloHorario,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(55.dp),
+                            placeholder = {
+                                Text("Inicial")
+                            },
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
+                            colors = coresCamposNovoResiduo()
+                        )
+
+                        // Captura o toque sem abrir o teclado
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .clickable {
+                                    selecionarHorarioInicial = true
+                                }
+                        )
+                    }
+
+                    // Campo do horário final
+                    Box(modifier = Modifier.weight(1f)) {
+                        OutlinedTextField(
+                            value = horarioFinal,
+                            onValueChange = {},
+                            readOnly = true,
+                            // Ativa a aparência de erro quando o intervalo é inválido
+                            isError = erroIntervaloHorario,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(55.dp),
+                            placeholder = {
+                                Text("Final")
+                            },
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
+                            colors = coresCamposNovoResiduo()
+                        )
+
+                        // Abre o relógio do horário final.
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .clickable {
+                                    selecionarHorarioFinal = true
+                                }
+                        )
+                    }
+                }
+
+                // Exibe uma mensagem quando o horário final não é posterior ao horário inicial
+                if (erroIntervaloHorario) {
+                    Text(
+                        text = "O horário final deve ser maior que o horário inicial.",
+                        color = NovoResiduoErro,
+                        fontSize = 12.sp
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(4.dp))
 
@@ -328,6 +503,56 @@ fun DialogNovoResiduo(
             }
         }
     }
+
+    // Abre o relógio para escolher o horário inicial
+    if (selecionarHorarioInicial) {
+        SeletorHorarioResiduo(
+            horarioAtual = horarioInicial,
+            onConfirmar = { horarioSelecionado ->
+                horarioInicial = horarioSelecionado
+                selecionarHorarioInicial = false
+            },
+            onCancelar = {
+                selecionarHorarioInicial = false
+            }
+        )
+    }
+
+    // Abre o relógio para escolher o horário final
+    if (selecionarHorarioFinal) {
+        SeletorHorarioResiduo(
+            horarioAtual = horarioFinal,
+            onConfirmar = { horarioSelecionado ->
+                horarioFinal = horarioSelecionado
+                selecionarHorarioFinal = false
+            },
+            onCancelar = {
+                selecionarHorarioFinal = false
+            }
+        )
+    }
+
+    // Exibe o calendário quando o usuário toca no ícone da data
+    if (selecionarData) {
+        SeletorDataResiduo(
+            dataAtual = dataDisponivel.text,
+            onConfirmar = { dataSelecionada ->
+                // Atualiza o campo com a data escolhida
+                // TextFieldValue mantém o controle do cursor
+                dataDisponivel = TextFieldValue(
+                    text = dataSelecionada,
+                    selection = TextRange(dataSelecionada.length)
+                )
+                // Fecha o calendário após confirmar
+                selecionarData = false
+            },
+
+            onCancelar = {
+                // Fecha o calendário sem alterar a data preenchida.
+                selecionarData = false
+            }
+        )
+    }
 }
 
 // Centraliza a configuração visual dos campos do formulário
@@ -337,8 +562,14 @@ private fun coresCamposNovoResiduo() =
     OutlinedTextFieldDefaults.colors(
         focusedContainerColor = NovoResiduoFundoCampo,
         unfocusedContainerColor = NovoResiduoFundoCampo,
+
         focusedBorderColor = NovoResiduoBordaCampo,
         unfocusedBorderColor = NovoResiduoBordaCampo,
+
         focusedTextColor = NovoResiduoTexto,
-        unfocusedTextColor = NovoResiduoTexto
+        unfocusedTextColor = NovoResiduoTexto,
+
+        errorBorderColor = NovoResiduoErro,
+        errorTextColor = NovoResiduoTexto,
+        errorContainerColor = NovoResiduoFundoCampo
     )
