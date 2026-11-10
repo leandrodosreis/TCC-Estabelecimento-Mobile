@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.example.ecoleta_estabelecimento.features.residuos.model.Residuo
+import com.example.ecoleta_estabelecimento.features.residuos.model.TipoMaterial
 
 class ResiduosViewModel : ViewModel() {
 
@@ -13,6 +14,26 @@ class ResiduosViewModel : ViewModel() {
 
     fun atualizarBusca(novaBusca: String) {
         busca = novaBusca
+    }
+
+    // Tipo de material selecionado no filtro
+    // null significa que todos os materiais estão selecionados
+    var idTipoSelecionado by mutableStateOf<Int?>(null)
+        private set
+
+    // Atualiza o tipo de material selecionado
+    fun atualizarTipoSelecionado(idTipo: Int?) {
+        idTipoSelecionado = idTipo
+    }
+
+    // Guarda o ID do status selecionado no filtro
+    // null significa que nenhum filtro de status está aplicado
+    var idStatusSelecionado by mutableStateOf<Int?>(null)
+        private set
+
+    // Atualiza o status selecionado pelo usuário
+    fun atualizarStatusSelecionado(idStatus: Int?) {
+        idStatusSelecionado = idStatus
     }
 
     val residuos = listOf(
@@ -68,17 +89,57 @@ class ResiduosViewModel : ViewModel() {
             horarioInicial = "08:00",
             horarioFinal = "17:00",
             observacao = "",
-            idStatusResiduo = 1,
+            idStatusResiduo = 2,
             statusResiduo = "Agendado",
             statusCard = "AGENDADO"
         )
     )
 
+    val tiposMateriais = listOf(
+        TipoMaterial(1, "Vidro"),
+        TipoMaterial(2, "Papelão"),
+        TipoMaterial(3, "Plástico"),
+        TipoMaterial(4, "Metal")
+    )
+
+    // Obtém os status existentes nos resíduos
+        // O ID será usado na filtragem e o nome será exibido no dropdown
+            // distinctBy evita repetir status que aparecem em vários resíduos
+    val statusDisponiveis: List<Pair<Int, String>>
+        get() = residuos
+            .filter {
+                // Nesta tela, exibimos apenas Disponível e Agendado
+                it.statusResiduo.equals("Disponível", ignoreCase = true) ||
+                        it.statusResiduo.equals("Agendado", ignoreCase = true)
+            }
+            .distinctBy { it.idStatusResiduo }
+            .map { residuo ->
+                // Primeiro valor: ID; segundo valor: nome do status
+                residuo.idStatusResiduo to residuo.statusResiduo
+            }
+
     val residuosFiltrados: List<Residuo>
         get() = residuos.filter { residuo ->
-            residuo.material.contains(
+
+            // Verifica se o material corresponde ao texto pesquisado
+            val correspondeBusca = residuo.material.contains(
                 busca,
                 ignoreCase = true
             )
+
+            // Verifica se o material corresponde ao tipo selecionado
+            val correspondeTipo =
+                idTipoSelecionado == null ||
+                    residuo.idTipoMaterial == idTipoSelecionado
+
+            // Verifica se o resíduo corresponde ao status selecionado
+            // Quando o ID é null, aceita qualquer status
+            val correspondeStatus =
+                idStatusSelecionado == null ||
+                        residuo.idStatusResiduo == idStatusSelecionado
+
+            // O resíduo precisa atender aos três critérios:
+            // texto pesquisado, tipo de material e status
+            correspondeBusca && correspondeTipo && correspondeStatus
         }
 }

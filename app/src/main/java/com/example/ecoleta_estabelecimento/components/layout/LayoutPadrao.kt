@@ -13,6 +13,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.changedToDownIgnoreConsumed
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.example.ecoleta_estabelecimento.components.footer.FooterScreen
@@ -28,6 +32,9 @@ fun LayoutPadrao(
     onLogout: () -> Unit,
     conteudo: LazyListScope.() -> Unit
 ) {
+
+    // Gerencia o foco dos campos de texto presentes no conteúdo da tela
+    val focusManager = LocalFocusManager.current
 
     // Organiza o Header, conteúdo e Footer
     Column(
@@ -48,7 +55,24 @@ fun LayoutPadrao(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
-                .background(VerdeFundo),
+                .background(VerdeFundo)
+            // Observa os toques realizados em qualquer parte da lista,
+            // incluindo os cards e os espaços vazios entre os componentes
+                .pointerInput(focusManager) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            // Observa o toque antes dos componentes filhos, sem consumir o evento e sem bloquear seus cliques
+                            val evento = awaitPointerEvent(PointerEventPass.Initial)
+
+                            // Verifica se o usuário acabou de encostar na tela
+                            if (evento.changes.any { it.changedToDownIgnoreConsumed() }) {
+
+                                // Remove o foco do campo de texto ativo
+                                focusManager.clearFocus()
+                            }
+                        }
+                    }
+                },
             contentPadding = PaddingValues(
                 start = 20.dp,
                 end = 20.dp,

@@ -71,3 +71,13 @@ val ResiduoStatusDisponivelFundo = Color(0xFFE3EEEA)
 val ResiduoStatusDisponivelTexto = Color(0xFF5F7A75)
 val ResiduoStatusAgendadoFundo = Color(0xFFC9EEFB)
 val ResiduoStatusAgendadoTexto = Color(0xFF14556B)
+val ResiduoDropdownSelecionado = Color(0xFF2588D9)
+val ResiduoDropdownTextoSelecionado = Color(0xFFFFFFFF)
+
+// Cores utilizadas no formulário de cadastro de novo resíduo
+val NovoResiduoFundoCampo = Color(0xFFEEF7F3)
+val NovoResiduoBordaCampo = Color(0xFFD2E2DB)
+val NovoResiduoTexto = Color(0xFF244A45)
+val NovoResiduoDescricao = Color(0xFF687B80)
+val NovoResiduoCancelar = Color(0xFFE52B2B)
+val NovoResiduoConfirmar = Color(0xFF22AC78)
