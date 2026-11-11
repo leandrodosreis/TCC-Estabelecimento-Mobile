@@ -161,6 +161,7 @@ fun LazyListScope.ResiduosScreen(
         // Exibe o popup somente quando o usuário clicar em Novo Resíduo
         if (mostrarDialogNovoResiduo) {
             DialogNovoResiduo (
+                viewModel = viewModel,
                 onDismiss = {
                     // Fecha o popup ao clicar em Cancelar ou fora dele
                     mostrarDialogNovoResiduo = false
