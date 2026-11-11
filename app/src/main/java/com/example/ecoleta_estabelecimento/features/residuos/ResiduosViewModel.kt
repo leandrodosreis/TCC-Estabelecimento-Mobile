@@ -4,10 +4,101 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.ecoleta_estabelecimento.features.residuos.model.Residuo
+import com.example.ecoleta_estabelecimento.features.residuos.model.ResiduoCadastroRequest
 import com.example.ecoleta_estabelecimento.features.residuos.model.TipoMaterial
+import com.example.ecoleta_estabelecimento.features.residuos.service.ResiduoService
+import com.example.ecoleta_estabelecimento.retrofit.RetrofitFactory
+import kotlinx.coroutines.launch
 
 class ResiduosViewModel : ViewModel() {
+
+    // Serviço responsável pelas requisições HTTP dos resíduos
+    private val residuoService = RetrofitFactory.criarServico(
+        ResiduoService::class.java
+    )
+
+    // Indica se uma requisição de cadastro está em andamento
+    var cadastrandoResiduo by mutableStateOf(false)
+        private set
+
+    // Mensagem de erro retornada durante o cadastro
+    var erroCadastroResiduo by mutableStateOf<String?>(null)
+        private set
+
+    // Indica se o último cadastro foi realizado com sucesso
+    var cadastroResiduoRealizado by mutableStateOf(false)
+        private set
+
+    // Envia os dados de um novo resíduo para o backend
+    fun cadastrarResiduo(residuo: ResiduoCadastroRequest) {
+        // Evita duas requisições simultâneas
+        if (cadastrandoResiduo) return
+
+        // Inicia o estado de carregamento.
+        cadastrandoResiduo = true
+
+        // Limpa resultados de tentativas anteriores
+        erroCadastroResiduo = null
+        cadastroResiduoRealizado = false
+
+        // Executa a requisição dentro da coroutine da ViewModel
+        viewModelScope.launch {
+            try {
+                // Envia o POST para o backend
+                val resposta = residuoService.cadastrarResiduo(residuo)
+
+                if (resposta.isSuccessful) {
+                    // Obtém o corpo retornado pelo backend
+                    val corpo = resposta.body()
+
+                    if (corpo?.status == true) {
+                        // Confirma o cadastro somente após sucesso da API
+                        cadastroResiduoRealizado = true
+                    } else {
+                        // A API respondeu, mas não confirmou o sucesso
+                        erroCadastroResiduo =
+                            corpo?.message ?: "Não foi possível cadastrar o resíduo."
+                    }
+                } else {
+                    // Trata os códigos HTTP retornados pelo backend
+                    erroCadastroResiduo = when (resposta.code()) {
+                        400 -> "Os dados informados são inválidos."
+                        401 -> "Sua autenticação expirou ou é inválida."
+                        404 -> "Não foi encontrado um registro necessário para o cadastro."
+                        415 -> {
+                            // Exibe o corpo da resposta para descobrir
+                            // por que o backend rejeitou a requisição.
+                            val detalheErro = resposta.errorBody()?.string()
+
+                            android.util.Log.e(
+                                "CADASTRO_RESIDUO",
+                                "HTTP 415 - $detalheErro"
+                            )
+
+                            "Formato da requisição não aceito pelo servidor."
+                        }
+                        500 -> "Ocorreu um erro interno no servidor."
+                        else -> "Não foi possível cadastrar o resíduo. Código: ${resposta.code()}"
+                    }
+                }
+            } catch (e: Exception) {
+                // Trata falhas de conexão e outros erros inesperados
+                erroCadastroResiduo = "Não foi possível conectar ao servidor. Verifique sua conexão."
+            } finally {
+
+                // Finaliza o carregamento em qualquer resultado.
+                cadastrandoResiduo = false
+            }
+        }
+    }
+
+    // Limpa os estados do cadastro para uma nova tentativa ou para quando o usuário abrir o formulário novamente.
+    fun limparEstadoCadastroResiduo() {
+        erroCadastroResiduo = null
+        cadastroResiduoRealizado = false
+    }
 
     var busca by mutableStateOf("")
         private set
