@@ -71,6 +71,10 @@ val ResiduoStatusDisponivelFundo = Color(0xFFE3EEEA)
 val ResiduoStatusDisponivelTexto = Color(0xFF5F7A75)
 val ResiduoStatusAgendadoFundo = Color(0xFFC9EEFB)
 val ResiduoStatusAgendadoTexto = Color(0xFF14556B)
+
+val ResiduoStatusAguardandoFinalizacaoTexto = Color(0xFFD97706)
+
+val ResiduoStatusAguardandoFinalizacaoFundo = Color(0xFFFEF3C7)
 val ResiduoDropdownSelecionado = Color(0xFF2588D9)
 val ResiduoDropdownTextoSelecionado = Color(0xFFFFFFFF)
 

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
@@ -17,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,16 +29,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import com.example.ecoleta_estabelecimento.features.residuos.components.AnimacaoSucessoResiduo
 import com.example.ecoleta_estabelecimento.features.residuos.components.BotaoNovoResiduo
 import com.example.ecoleta_estabelecimento.features.residuos.components.CardResiduo
 import com.example.ecoleta_estabelecimento.features.residuos.components.DialogNovoResiduo
 import com.example.ecoleta_estabelecimento.features.residuos.components.FiltrosResiduos
+import com.example.ecoleta_estabelecimento.features.residuos.components.MensagemListaVazia
 import com.example.ecoleta_estabelecimento.ui.theme.BordaPadrao
 import com.example.ecoleta_estabelecimento.ui.theme.Branco
 import com.example.ecoleta_estabelecimento.ui.theme.VerdePrincipal
 import com.example.ecoleta_estabelecimento.ui.theme.nomeTela
 import com.example.ecoleta_estabelecimento.ui.theme.subTitulo
 import com.example.ecoleta_estabelecimento.ui.theme.textoPainel
+import kotlinx.coroutines.delay
 
 fun LazyListScope.ResiduosScreen(
     viewModel: ResiduosViewModel
@@ -51,6 +57,19 @@ fun LazyListScope.ResiduosScreen(
         // Controla se o popup de cadastro está aberto ou fechado
         var mostrarDialogNovoResiduo by remember {
             mutableStateOf(false)
+        }
+
+        // Controla se a animação de sucesso está visível
+        var mostrarAnimacaoSucesso by remember {
+            mutableStateOf(false)
+        }
+
+        // Fecha automaticamente a animação após três segundos
+        LaunchedEffect(mostrarAnimacaoSucesso) {
+            if (mostrarAnimacaoSucesso) {
+                delay(3000)
+                mostrarAnimacaoSucesso = false
+            }
         }
 
         Column(
@@ -158,26 +177,100 @@ fun LazyListScope.ResiduosScreen(
             )
         }
 
-        // Exibe o popup somente quando o usuário clicar em Novo Resíduo
+        // Exibe o formulário de cadastro quando solicitado
         if (mostrarDialogNovoResiduo) {
             DialogNovoResiduo (
                 viewModel = viewModel,
+                // Fecha o popup ao clicar em Cancelar ou fora dele
                 onDismiss = {
-                    // Fecha o popup ao clicar em Cancelar ou fora dele
                     mostrarDialogNovoResiduo = false
+                },
+                // Executado somente quando o backend confirma o cadastro
+                onCadastroSucesso = {
+                    // Fecha o formulário
+                    mostrarDialogNovoResiduo = false
+
+                    // Abre a animação de confirmação
+                    mostrarAnimacaoSucesso = true
                 }
             )
         }
+
+        // Mostra a animação Lottie sobre a tela de resíduos
+        if (mostrarAnimacaoSucesso) {
+            Dialog(
+                // Não permite fechar tocando fora da animação
+                onDismissRequest = {}
+            ) {
+                AnimacaoSucessoResiduo()
+            }
+        }
     }
 
-    items(
-        items = viewModel.residuosFiltrados,
-        key = { residuo -> residuo.idResiduo }
-    ) {
-        residuo ->
+    when {
+        // Aguarda a consulta da API terminar
+        viewModel.carregandoResiduos -> {
+            item {
+                Text(
+                    text = "Carregando resíduos...",
+                    color = subTitulo,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 30.dp)
+                )
+            }
+        }
 
-        CardResiduo(
-            residuo = residuo
-        )
+        // Evita informar que a lista está vazia quando ocorreu um erro na consulta
+        viewModel.erroCarregamentoResiduos != null -> {
+            item {
+                MensagemListaVazia(
+                    titulo = "Não foi possível carregar os resíduos",
+                    descricao = "Ocorreu um problema ao buscar seus resíduos. Tente novamente."
+                )
+            }
+        }
+
+        // O estabelecimento ainda não cadastrou resíduos
+        viewModel.residuos.isEmpty() -> {
+            item {
+                MensagemListaVazia(
+                    titulo = "Nenhum resíduo cadastrado",
+                    descricao = "Você ainda não cadastrou resíduos. Clique em Novo resíduo para começar."
+                )
+            }
+        }
+
+        // Existem resíduos, mas a pesquisa não encontrou resultados
+        viewModel.residuosFiltrados.isEmpty() && viewModel.busca.isNotBlank() -> {
+            item {
+                MensagemListaVazia(
+                    titulo = "Nenhum resultado encontrado",
+                    descricao = "Não encontramos resíduos para sua pesquisa. Tente buscar outro material."
+                )
+            }
+        }
+
+        // Existem resíduos, mas nenhum corresponde aos filtros
+        viewModel.residuosFiltrados.isEmpty() -> {
+            item {
+                MensagemListaVazia(
+                    titulo = "Nenhum resíduo encontrado",
+                    descricao = "Nenhum resíduo corresponde aos filtros selecionados. Tente alterar o material ou status."
+                )
+            }
+        }
+
+        // Exibe normalmente os resíduos retornados pela API
+        else -> {
+            items(
+                items = viewModel.residuosFiltrados,
+                key = { residuo -> residuo.idResiduo }
+            ) { residuo ->
+                CardResiduo(
+                    residuo = residuo
+                )
+            }
+        }
     }
 }

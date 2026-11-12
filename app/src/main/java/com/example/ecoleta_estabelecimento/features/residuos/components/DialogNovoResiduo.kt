@@ -83,7 +83,8 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun DialogNovoResiduo(
     viewModel: ResiduosViewModel,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onCadastroSucesso: () -> Unit
 ) {
 
     // Limpa o resultado anterior ao abrir o formulário
@@ -144,10 +145,10 @@ fun DialogNovoResiduo(
 
     var observacao by remember { mutableStateOf("") }
 
-    // Fecha o formulário somente após o backend confirmar o cadastro
+    // Avisa a tela principal quando o backend confirmar o cadastro
     LaunchedEffect(viewModel.cadastroResiduoRealizado) {
         if (viewModel.cadastroResiduoRealizado) {
-            onDismiss()
+            onCadastroSucesso()
         }
     }
 

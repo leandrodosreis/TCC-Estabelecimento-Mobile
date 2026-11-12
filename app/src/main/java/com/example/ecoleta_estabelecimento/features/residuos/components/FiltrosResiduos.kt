@@ -37,6 +37,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -148,7 +149,18 @@ fun FiltrosResiduos(
                     text = nomeTipoSelecionado,
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Medium,
-                    maxLines = 1
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Clip,
+                    modifier = Modifier
+                        .weight(1f)
+                        .basicMarquee(
+                            iterations = Int.MAX_VALUE,
+                            initialDelayMillis = 1000,
+                            repeatDelayMillis = 1000,
+                            velocity = 30.dp
+                        )
                 )
 
                 // Espaçamento entre o texto e a seta
@@ -261,6 +273,15 @@ fun FiltrosResiduos(
                                 Text(
                                     text = tipo.material,
                                     fontSize = 14.sp,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Clip,
+                                    modifier = Modifier.basicMarquee(
+                                        iterations = Int.MAX_VALUE,
+                                        initialDelayMillis = 1000,
+                                        repeatDelayMillis = 1000,
+                                        velocity = 30.dp
+                                    ),
                                     color = if (selecionado)
                                         ResiduoDropdownTextoSelecionado
                                     else
@@ -316,7 +337,18 @@ fun FiltrosResiduos(
                     text = nomeStatusSelecionado,
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Medium,
-                    maxLines = 1
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Clip,
+                    modifier = Modifier
+                        .weight(1f)
+                        .basicMarquee(
+                            iterations = Int.MAX_VALUE,
+                            initialDelayMillis = 1000,
+                            repeatDelayMillis = 1000,
+                            velocity = 30.dp
+                        )
                 )
 
                 // Espaçamento entre o texto e a seta
@@ -436,6 +468,14 @@ fun FiltrosResiduos(
                                     text = nomeStatus,
                                     fontSize = 14.sp,
                                     maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Clip,
+                                    modifier = Modifier.basicMarquee(
+                                        iterations = Int.MAX_VALUE,
+                                        initialDelayMillis = 1000,
+                                        repeatDelayMillis = 1000,
+                                        velocity = 30.dp
+                                    ),
                                     color = if (selecionado)
                                         ResiduoDropdownTextoSelecionado
                                     else

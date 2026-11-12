@@ -29,6 +29,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ecoleta_estabelecimento.R
@@ -41,6 +42,8 @@ import com.example.ecoleta_estabelecimento.ui.theme.ResiduoFiltroTexto
 import com.example.ecoleta_estabelecimento.ui.theme.ResiduoIconeFundo
 import com.example.ecoleta_estabelecimento.ui.theme.ResiduoStatusAgendadoFundo
 import com.example.ecoleta_estabelecimento.ui.theme.ResiduoStatusAgendadoTexto
+import com.example.ecoleta_estabelecimento.ui.theme.ResiduoStatusAguardandoFinalizacaoFundo
+import com.example.ecoleta_estabelecimento.ui.theme.ResiduoStatusAguardandoFinalizacaoTexto
 import com.example.ecoleta_estabelecimento.ui.theme.ResiduoStatusDisponivelFundo
 import com.example.ecoleta_estabelecimento.ui.theme.ResiduoStatusDisponivelTexto
 import com.example.ecoleta_estabelecimento.ui.theme.VerdePrincipal
@@ -66,6 +69,12 @@ fun CardResiduo(
     // Verifica se o resíduo está agendado
     val agendado = residuo.statusCard.equals(
         "AGENDADO",
+        ignoreCase = true
+    )
+
+    // Verifica se o backend informou que o resíduo está aguardando a finalização da coleta
+    val aguardandoFinalizacao = residuo.statusCard.equals(
+        "AGUARDANDO FINALIZAÇÃO",
         ignoreCase = true
     )
 
@@ -125,16 +134,25 @@ fun CardResiduo(
 
                 // Status
                 Text(
-                    text = residuo.statusCard,
-                    fontSize = 13.sp,
+                    text = if (aguardandoFinalizacao)
+                        "AGUARDANDO\nFINALIZAÇÃO"
+                    else
+                        residuo.statusCard,
+                    fontSize = if (aguardandoFinalizacao) 11.sp else 13.sp,
+                    lineHeight = if (aguardandoFinalizacao) 12.sp else 16.sp,
+                    textAlign = TextAlign.Center,
                     fontWeight = FontWeight.Bold,
-                    color = if (agendado)
+                    color = if (aguardandoFinalizacao)
+                        ResiduoStatusAguardandoFinalizacaoTexto
+                    else if (agendado)
                         ResiduoStatusAgendadoTexto
                     else
                         ResiduoStatusDisponivelTexto,
                     modifier = Modifier
                         .background(
-                            color = if (agendado)
+                            color = if (aguardandoFinalizacao)
+                                ResiduoStatusAguardandoFinalizacaoFundo
+                            else if (agendado)
                                 ResiduoStatusAgendadoFundo
                             else
                                 ResiduoStatusDisponivelFundo,
@@ -205,7 +223,7 @@ fun CardResiduo(
 
                     // Texto para exibir o horário disponível para coleta
                     Text(
-                        text = "${residuo.horarioInicial} às ${residuo.horarioFinal}",
+                        text = "${formatarHorario(residuo.horarioInicial)} às ${formatarHorario(residuo.horarioFinal)}",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = nomeTela
@@ -230,7 +248,19 @@ fun CardResiduo(
             // BOTÕES DE AÇÃO
             // ===============
 
-            if (agendado) {
+            if (aguardandoFinalizacao) {
+                // Esse status não tem interação de botão
+                Text(
+                    text = "Aguardando a empresa\ncoletora finalizar a coleta.",
+                    modifier = Modifier.fillMaxWidth(),
+                    fontSize = 13.sp,
+                    fontStyle = FontStyle.Italic,
+                    color = subTitulo,
+                    textAlign = TextAlign.End,
+                    lineHeight = 18.sp
+                )
+
+            } else if (agendado) {
                 Box(
                     modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.Center
@@ -311,5 +341,16 @@ fun CardResiduo(
                 }
             }
         }
+    }
+}
+
+// Formata o horário para exibir apenas horas e minutos
+// Exemplo: "08:00:00" -> "08:00"
+private fun formatarHorario(horario: String): String {
+    return horario.substringBeforeLast(
+        delimiter = ":",
+        missingDelimiterValue = horario
+    ).let { resultado ->
+        if (horario.count { it == ':' } >= 2) resultado else horario
     }
 }
