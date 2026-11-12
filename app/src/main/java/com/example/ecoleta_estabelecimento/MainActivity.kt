@@ -24,7 +24,9 @@ import com.example.ecoleta_estabelecimento.ui.theme.EcoletaEstabelecimentoTheme
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.ecoleta_estabelecimento.features.residuos.ResiduosScreen
 import com.example.ecoleta_estabelecimento.features.residuos.ResiduosViewModel
+import com.example.ecoleta_estabelecimento.features.telaCadastro.CadastroViewModel
 import kotlinx.coroutines.delay
+import com.example.ecoleta_estabelecimento.features.telaCadastro.CadastroScreen
 
 class MainActivity : ComponentActivity() {
 
@@ -59,6 +61,8 @@ fun TelaInicial(
 
     // Obtém a ViewModel de Meus Resíduos
     val residuosViewModel: ResiduosViewModel = viewModel()
+
+    val cadastroViewModel: CadastroViewModel = viewModel()
 
     // Atualiza automaticamente os dados da Home
     LaunchedEffect(telaAtual) {
@@ -101,7 +105,7 @@ fun TelaInicial(
             telaAtual = rota
         },
         onLogout = {
-            telaAtual = "login"
+            telaAtual = "cadastro"
         }
     ) {
 
@@ -157,6 +161,10 @@ fun TelaInicial(
 
             "perfil" -> item {
                 Text("Tela de Perfil")
+            }
+
+            "cadastro" -> {
+                CadastroScreen(viewModel = cadastroViewModel)
             }
 
             "login" -> item {
