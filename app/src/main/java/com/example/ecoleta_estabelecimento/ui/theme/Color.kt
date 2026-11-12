@@ -10,6 +10,8 @@ val VerdePrincipal = Color(0xFF25AA76)
 val VerdeEscuro = Color(0xFF173530)
 val Branco = Color(0xFFFFFFFF)
 val Preto = Color(0xFF000000)
+
+val Cinza = Color(0xFF5E6B70)
 val Transparente = Color.Transparent
 
 val CorTextoBase = Color(0xFF03201E)

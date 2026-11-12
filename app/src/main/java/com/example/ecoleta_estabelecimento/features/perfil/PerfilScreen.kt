@@ -11,6 +11,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ecoleta_estabelecimento.features.home.components.CardBoasVindas
+import com.example.ecoleta_estabelecimento.features.perfil.componenents.CardEndereco
 import com.example.ecoleta_estabelecimento.features.perfil.componenents.CardResumos
 import com.example.ecoleta_estabelecimento.features.residuos.ResiduosViewModel
 import com.example.ecoleta_estabelecimento.ui.theme.nomeTela
@@ -57,12 +58,35 @@ fun LazyListScope.PerfilScreen(
         }
     }
 
-    // Card grande de boas-vindas
+    // Card grande de perfi
     item {
         CardResumos(
-            nomeEmpresa = "Teste",
-            cnpjEmpresa = "40028922"
+            nomeEmpresa = "Ecoleta",
+            cnpjEmpresa = "77.219.861/0001-90"
         )
+
     }
+        item {
+            Text(
+                text = "DADOS EMPRESA",
+                fontWeight = FontWeight.Bold,
+                fontSize = 17.sp,
+                color = textoPainel
+            )
+
+
+            CardEndereco(
+
+                nomeEmpresa = "Ecoleta",
+                cnpj = "77.219.861/0001-90",
+                telefone = "40028922",
+                email = "ecoleta@gmail.com.br"
+            )
+        }
+
+    item {
+        Spacer(modifier = Modifier.height(20.dp))
+    }
+
 
 }
