@@ -20,8 +20,6 @@ import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.example.ecoleta_estabelecimento.R
 import com.example.ecoleta_estabelecimento.ui.theme.Branco
-import com.example.ecoleta_estabelecimento.ui.theme.CorTextoBase
-import com.example.ecoleta_estabelecimento.ui.theme.NovoResiduoConfirmar
 
 // Exibe a animação de sucesso após o cadastro de um resíduo
 // A animação é carregada do arquivo: res/raw/animacao_sucesso.json

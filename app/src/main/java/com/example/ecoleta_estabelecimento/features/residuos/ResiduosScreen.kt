@@ -71,7 +71,7 @@ fun LazyListScope.ResiduosScreen(
         // Fecha automaticamente a animação após três segundos
         LaunchedEffect(mostrarAnimacaoSucesso) {
             if (mostrarAnimacaoSucesso) {
-                delay(3000)
+                delay(2000)
                 mostrarAnimacaoSucesso = false
             }
         }
