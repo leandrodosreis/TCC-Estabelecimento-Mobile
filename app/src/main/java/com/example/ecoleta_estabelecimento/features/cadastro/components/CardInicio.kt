@@ -19,35 +19,6 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun CardInicial(
 ){
-    Column {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(160.dp)
-                .offset(y = (-20).dp),
-            colors = CardDefaults.cardColors(
-                containerColor = Color(0xFFF9F6F6)
-            ),
-            elevation = CardDefaults.cardElevation(4.dp)
-        ) {
 
-            Text(
-                text = "CADASTRE-SE",
-                fontSize = 24.sp,
-                color = Color.Black,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 30.dp)
-            )
-
-            Text(
-                text = "Disponibilize os resíduos para melhorar o meio ambiente, através da Ecoleta",
-                modifier = Modifier. padding(top = 20.dp, start = 30.dp, end = 10.dp)
-            )
-
-        }
-    }
 
 }

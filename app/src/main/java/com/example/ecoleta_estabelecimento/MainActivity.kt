@@ -156,7 +156,7 @@ fun TelaInicial(
             telaAtual = rota
         },
         onLogout = {
-            telaAtual = "login"
+            telaAtual = "cadastro"
         }
     ) {
 
