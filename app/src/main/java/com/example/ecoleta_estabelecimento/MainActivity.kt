@@ -23,6 +23,8 @@ import com.example.ecoleta_estabelecimento.features.home.model.OfertaResumo
 import com.example.ecoleta_estabelecimento.ui.theme.Branco
 import com.example.ecoleta_estabelecimento.ui.theme.EcoletaEstabelecimentoTheme
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.ecoleta_estabelecimento.features.cadastro.CadastroScreen
+import com.example.ecoleta_estabelecimento.features.cadastro.CadastroViewModel
 import com.example.ecoleta_estabelecimento.features.residuos.ResiduosScreen
 import com.example.ecoleta_estabelecimento.features.residuos.ResiduosViewModel
 import com.example.ecoleta_estabelecimento.features.residuos.components.AnimacaoSucessoResiduo
@@ -60,8 +62,11 @@ fun TelaInicial(
 
     // Controla temporariamente a rota selecionada
     var telaAtual by remember {
-        mutableStateOf("residuos")
+        mutableStateOf("home")
     }
+
+    // Obtém a ViewModel do Cadastro
+    val cadastroViewModel: CadastroViewModel = viewModel()
 
     // Obtém a ViewModel da Home
     val homeViewModel: HomeViewModel = viewModel()
@@ -221,6 +226,10 @@ fun TelaInicial(
 
             "perfil" -> item {
                 Text("Tela de Perfil")
+            }
+
+            "cadastro" -> {
+                CadastroScreen(viewModel = cadastroViewModel)
             }
 
             "login" -> item {
