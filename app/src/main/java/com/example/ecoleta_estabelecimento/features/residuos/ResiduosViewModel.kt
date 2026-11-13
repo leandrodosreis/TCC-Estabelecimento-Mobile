@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.ecoleta_estabelecimento.features.residuos.model.DetalhesColeta
 import com.example.ecoleta_estabelecimento.features.residuos.model.Residuo
 import com.example.ecoleta_estabelecimento.features.residuos.model.ResiduoCadastroRequest
 import com.example.ecoleta_estabelecimento.features.residuos.model.TipoMaterial
@@ -103,6 +104,196 @@ class ResiduosViewModel : ViewModel() {
     fun limparEstadoCadastroResiduo() {
         erroCadastroResiduo = null
         cadastroResiduoRealizado = false
+    }
+
+    // Indica se o cancelamento está sendo enviado ao backend
+    var cancelandoResiduo by mutableStateOf(false)
+        private set
+
+    // Guarda uma possível mensagem de erro
+    var erroCancelamentoResiduo by mutableStateOf<String?>(null)
+        private set
+
+    // Guarda o ID do resíduo cancelado com sucesso
+    var idResiduoCancelado by mutableStateOf<Int?>(null)
+        private set
+
+    // Limpa os resultados anteriores do cancelamento
+    fun limparEstadoCancelamentoResiduo() {
+        erroCancelamentoResiduo = null
+        idResiduoCancelado = null
+    }
+
+    // Indica se uma edição está sendo enviada ao backend
+    var editandoResiduo by mutableStateOf(false)
+        private set
+
+    // Guarda uma possível mensagem de erro da edição
+    var erroEdicaoResiduo by mutableStateOf<String?>(null)
+        private set
+
+    // Guarda o ID do resíduo editado com sucesso
+    var idResiduoEditado by mutableStateOf<Int?>(null)
+        private set
+
+    // Limpa os resultados anteriores da edição
+    fun limparEstadoEdicaoResiduo() {
+        erroEdicaoResiduo = null
+        idResiduoEditado = null
+    }
+
+    // Guarda os detalhes da coleta retornados pela API
+    var detalhesColeta by mutableStateOf<DetalhesColeta?>(null)
+        private set
+
+    // Indica se a consulta está em andamento
+    var carregandoDetalhesColeta by mutableStateOf(false)
+        private set
+
+    // Guarda possíveis erros da consulta
+    var erroDetalhesColeta by mutableStateOf<String?>(null)
+        private set
+
+    // Limpa os dados de uma consulta anterior
+    fun limparDetalhesColeta() {
+        detalhesColeta = null
+        erroDetalhesColeta = null
+    }
+
+    // Busca os detalhes da coleta de um resíduo específico
+    fun buscarDetalhesColeta(idResiduo: Int) {
+        if (carregandoDetalhesColeta) return
+
+        limparDetalhesColeta()
+        carregandoDetalhesColeta = true
+
+        viewModelScope.launch {
+            try {
+                val resposta = residuoService.buscarDetalhesColeta(idResiduo)
+
+                if (resposta.isSuccessful) {
+                    val corpo = resposta.body()
+
+                    if (corpo?.status == true) {
+                        detalhesColeta = corpo.response
+                    } else {
+                        erroDetalhesColeta = "Não foi possível carregar os detalhes da coleta."
+                    }
+                } else {
+                    erroDetalhesColeta = when (resposta.code()) {
+                        400 -> "O ID do resíduo é inválido."
+                        401 -> "Sua autenticação expirou ou é inválida."
+                        404 -> "O resíduo não foi encontrado."
+                        500 -> "Ocorreu um erro interno no servidor."
+                        else -> "Erro ao consultar a coleta. Código: ${resposta.code()}"
+                    }
+                }
+            } catch (e: Exception) {
+                erroDetalhesColeta =
+                    "Não foi possível conectar ao servidor."
+            } finally {
+                carregandoDetalhesColeta = false
+            }
+        }
+    }
+
+    // Envia os dados editados do resíduo para a API
+    fun editarResiduo(
+        idResiduo: Int,
+        residuo: ResiduoCadastroRequest
+    ) {
+        // Impede duas edições simultâneas
+        if (editandoResiduo) return
+
+        editandoResiduo = true
+        limparEstadoEdicaoResiduo()
+
+        viewModelScope.launch {
+            try {
+                // Envia o PUT para o backend
+                val resposta = residuoService.editarResiduo(
+                    idResiduo = idResiduo,
+                    residuo = residuo
+                )
+
+                if (resposta.isSuccessful) {
+                    val corpo = resposta.body()
+
+                    if (corpo?.status == true) {
+                        // Informa à interface que a edição foi concluída
+                        idResiduoEditado = idResiduo
+
+                        // Atualiza os cards com os dados mais recentes
+                        carregarResiduos()
+                    } else {
+                        erroEdicaoResiduo = corpo?.message ?: "Não foi possível editar o resíduo."
+                    }
+                } else {
+                    erroEdicaoResiduo = when (resposta.code()) {
+                        400 -> "Os dados informados são inválidos."
+                        401 -> "Sua autenticação expirou ou é inválida."
+                        404 -> "O resíduo não foi encontrado."
+                        409 -> "Não é possível editar este resíduo no estado atual."
+                        415 -> "Formato da requisição não aceito pelo servidor."
+                        500 -> "Ocorreu um erro interno no servidor."
+                        else -> "Erro ao editar o resíduo. Código: ${resposta.code()}"
+                    }
+                }
+            } catch (e: Exception) {
+                erroEdicaoResiduo = "Não foi possível concluir a edição. Verifique sua conexão."
+            } finally {
+                editandoResiduo = false
+            }
+        }
+    }
+
+    // Envia o cancelamento para a API
+    fun cancelarResiduo(idResiduo: Int) {
+        // Impede requisições duplicadas
+        if (cancelandoResiduo) return
+
+        cancelandoResiduo = true
+        limparEstadoCancelamentoResiduo()
+
+        viewModelScope.launch {
+            try {
+                val resposta = residuoService.cancelarResiduo(idResiduo)
+
+                if (resposta.isSuccessful) {
+                    val corpo = resposta.body()
+
+                    if (corpo?.status == true) {
+                        // Atualiza a lista imediatamente após a confirmação
+                        residuos = residuos.filterNot {
+                            it.idResiduo == idResiduo
+                        }
+
+                        // Informa à interface que o cancelamento funcionou
+                        idResiduoCancelado = idResiduo
+
+                        // Sincroniza novamente a lista com o backend
+                        carregarResiduos()
+                    } else {
+                        erroCancelamentoResiduo =
+                            corpo?.message ?: "Não foi possível cancelar o resíduo."
+                    }
+                } else {
+                    erroCancelamentoResiduo = when (resposta.code()) {
+                        400 -> "O ID do resíduo é inválido."
+                        401 -> "Sua autenticação expirou ou é inválida."
+                        404 -> "O resíduo não foi encontrado."
+                        409 -> "Não é possível cancelar este resíduo no estado atual."
+                        500 -> "Ocorreu um erro interno no servidor."
+                        else -> "Erro ao cancelar o resíduo. Código: ${resposta.code()}"
+                    }
+                }
+            } catch (e: Exception) {
+                erroCancelamentoResiduo =
+                    "Não foi possível concluir a solicitação. Verifique sua conexão e atualize a lista antes de tentar novamente."
+            } finally {
+                cancelandoResiduo = false
+            }
+        }
     }
 
     var busca by mutableStateOf("")

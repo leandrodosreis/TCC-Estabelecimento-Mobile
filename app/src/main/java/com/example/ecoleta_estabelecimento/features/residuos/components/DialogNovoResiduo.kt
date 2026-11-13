@@ -26,10 +26,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -63,6 +60,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.example.ecoleta_estabelecimento.features.residuos.ResiduosViewModel
+import com.example.ecoleta_estabelecimento.features.residuos.model.Residuo
 import com.example.ecoleta_estabelecimento.features.residuos.model.ResiduoCadastroRequest
 import com.example.ecoleta_estabelecimento.ui.theme.Branco
 import com.example.ecoleta_estabelecimento.ui.theme.NovoResiduoBordaCampo
@@ -84,22 +82,35 @@ import java.time.format.DateTimeFormatter
 fun DialogNovoResiduo(
     viewModel: ResiduosViewModel,
     onDismiss: () -> Unit,
-    onCadastroSucesso: () -> Unit
+    onCadastroSucesso: () -> Unit,
+    residuoParaEditar: Residuo? = null,
+    onEdicaoSucesso: () -> Unit = {}
 ) {
+
+    // Altera os dados do popup quando clicar em editar, caso contrário o popup fica para adicionar os dados
+    val modoEdicao = residuoParaEditar != null
 
     // Limpa o resultado anterior ao abrir o formulário
     // Também limpa ao sair da composição, para evitar estados antigos
-    DisposableEffect(viewModel) {
-        viewModel.limparEstadoCadastroResiduo()
+    DisposableEffect(viewModel, residuoParaEditar?.idResiduo) {
+        if (modoEdicao) {
+            viewModel.limparEstadoEdicaoResiduo()
+        } else {
+            viewModel.limparEstadoCadastroResiduo()
+        }
 
         onDispose {
-            viewModel.limparEstadoCadastroResiduo()
+            if (modoEdicao) {
+                viewModel.limparEstadoEdicaoResiduo()
+            } else {
+                viewModel.limparEstadoCadastroResiduo()
+            }
         }
     }
 
     // Guarda o ID do material escolhido, o backend receberá esse ID, não o nome
-    var idTipoMaterial by remember {
-        mutableStateOf<Int?>(null)
+    var idTipoMaterial by remember(residuoParaEditar?.idResiduo) {
+        mutableStateOf(residuoParaEditar?.idTipoMaterial)
     }
 
     // Controla se a lista de materiais está aberta
@@ -125,30 +136,60 @@ fun DialogNovoResiduo(
         larguraCampoMaterial.toDp()
     }
 
-    var quantidade by remember { mutableStateOf("") }
+    var quantidade by remember(residuoParaEditar?.idResiduo) {
+        mutableStateOf(
+            residuoParaEditar?.quantidade?.replace('.', ',') ?: ""
+        )
+    }
 
     // Guarda a data digitada e a posição do cursor, permitindo aplicar a máscara sem perder o controle da edição
-    var dataDisponivel by remember {
-        mutableStateOf(TextFieldValue(""))
+    // Caso seja para edição, mantém a data que estava na hora do cadastro do resíduo
+    var dataDisponivel by remember(residuoParaEditar?.idResiduo) {
+        val dataInicial = residuoParaEditar?.dataDisponivel ?: ""
+
+        mutableStateOf(
+            TextFieldValue(
+                text = dataInicial,
+                selection = TextRange(dataInicial.length)
+            )
+        )
     }
 
     // Controla se o calendário está aberto
     var selecionarData by remember { mutableStateOf(false) }
 
     // Guarda os horários selecionados pelo relógio.
-    var horarioInicial by remember { mutableStateOf("") }
-    var horarioFinal by remember { mutableStateOf("") }
+    var horarioInicial by remember(residuoParaEditar?.idResiduo) {
+        mutableStateOf(
+            residuoParaEditar?.horarioInicial?.take(5) ?: ""
+        )
+    }
+
+    var horarioFinal by remember(residuoParaEditar?.idResiduo) {
+        mutableStateOf(
+            residuoParaEditar?.horarioFinal?.take(5) ?: ""
+        )
+    }
 
     // Controla qual seletor está aberto.
     var selecionarHorarioInicial by remember { mutableStateOf(false) }
     var selecionarHorarioFinal by remember { mutableStateOf(false) }
 
-    var observacao by remember { mutableStateOf("") }
+    var observacao by remember(residuoParaEditar?.idResiduo) {
+        mutableStateOf(residuoParaEditar?.observacao ?: "")
+    }
 
     // Avisa a tela principal quando o backend confirmar o cadastro
     LaunchedEffect(viewModel.cadastroResiduoRealizado) {
         if (viewModel.cadastroResiduoRealizado) {
             onCadastroSucesso()
+        }
+    }
+
+    // Avisa a tela principal quando o backend confirmar a edição
+    LaunchedEffect(viewModel.idResiduoEditado) {
+        if (modoEdicao && viewModel.idResiduoEditado == residuoParaEditar?.idResiduo) {
+            onEdicaoSucesso()
         }
     }
 
@@ -270,7 +311,11 @@ fun DialogNovoResiduo(
 
                 // Título principal do formulário
                 Text(
-                    text = "Disponibilizar novo resíduo",
+                    text = if (modoEdicao) {
+                        "Editar dados - ${residuoParaEditar?.material}"
+                    } else {
+                        "Disponibilizar novo resíduo"
+                    },
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Medium,
                     color = NovoResiduoTexto
@@ -280,7 +325,11 @@ fun DialogNovoResiduo(
 
                 // Descrição apresentada abaixo do título
                 Text(
-                    text = "Cadastre o material para receber ofertas de coleta. O valor será definido pela empresa coletora.",
+                    text = if (modoEdicao) {
+                        "Edite os dados do material para receber ofertas de coleta. O valor será definido pela empresa coletora."
+                    } else {
+                        "Cadastre o material para receber ofertas de coleta. O valor será definido pela empresa coletora."
+                    },
                     fontSize = 13.sp,
                     lineHeight = 15.sp,
                     modifier = Modifier.widthIn(280.dp),
@@ -685,9 +734,15 @@ fun DialogNovoResiduo(
                 Spacer(modifier = Modifier.height(30.dp))
 
                 // Exibe uma mensagem quando o backend não consegue cadastrar o resíduo
-                viewModel.erroCadastroResiduo?.let { mensagemErro ->
+                val mensagemErro = if (modoEdicao) {
+                    viewModel.erroEdicaoResiduo
+                } else {
+                    viewModel.erroCadastroResiduo
+                }
+
+                mensagemErro?.let { erro ->
                     Text(
-                        text = mensagemErro,
+                        text = erro,
                         color = NovoResiduoErro,
                         fontSize = 12.sp
                     )
@@ -710,7 +765,7 @@ fun DialogNovoResiduo(
                         )
                     ) {
                         Text(
-                            text = "Cancelar",
+                            text = if (modoEdicao) "Voltar" else "Cancelar",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
                             maxLines = 1
@@ -741,12 +796,24 @@ fun DialogNovoResiduo(
                                     observacao = observacao.ifBlank { null }
                                 )
 
-                                // Envia os dados para a ViewModel, que realizará o POST utilizando o ResiduoService
-                                viewModel.cadastrarResiduo(novoResiduo)
+                                if (modoEdicao) {
+                                    // Atualiza o resíduo existente utilizando PUT
+                                    viewModel.editarResiduo(
+                                        idResiduo = residuoParaEditar!!.idResiduo,
+                                        residuo = novoResiduo
+                                    )
+                                } else {
+                                    // Mantém o cadastro utilizando POST
+                                    viewModel.cadastrarResiduo(novoResiduo)
+                                }
                             }
                         },
                         // Impede novos envios enquanto a requisição estiver em andamento
-                        enabled = !viewModel.cadastrandoResiduo,
+                        enabled = if (modoEdicao) {
+                            !viewModel.editandoResiduo
+                        } else {
+                            !viewModel.cadastrandoResiduo
+                        },
                         modifier = Modifier
                             .weight(1.5f)
                             .height(50.dp),
@@ -755,7 +822,10 @@ fun DialogNovoResiduo(
                             containerColor = NovoResiduoConfirmar
                         )
                     ) {
-                        if (viewModel.cadastrandoResiduo) {
+                        if (
+                            (modoEdicao && viewModel.editandoResiduo) ||
+                            (!modoEdicao && viewModel.cadastrandoResiduo)
+                        ) {
                             // Mostra o indicador enquanto aguarda a resposta da API
                             CircularProgressIndicator(
                                 modifier = Modifier
@@ -766,7 +836,7 @@ fun DialogNovoResiduo(
                             )
                         } else {
                             Text(
-                                text = "Disponibilizar Resíduo",
+                                text = if (modoEdicao) "Confirmar edição" else "Disponibilizar Resíduo",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 maxLines = 1

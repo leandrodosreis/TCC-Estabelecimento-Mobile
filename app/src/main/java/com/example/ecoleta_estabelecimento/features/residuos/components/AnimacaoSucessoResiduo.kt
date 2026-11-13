@@ -19,13 +19,16 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.example.ecoleta_estabelecimento.R
-import com.example.ecoleta_estabelecimento.ui.theme.NovoResiduoConfirmar
+import com.example.ecoleta_estabelecimento.ui.theme.Branco
 
 // Exibe a animação de sucesso após o cadastro de um resíduo
 // A animação é carregada do arquivo: res/raw/animacao_sucesso.json
 
 @Composable
-fun AnimacaoSucessoResiduo(modifier: Modifier = Modifier) {
+fun AnimacaoSucessoResiduo(
+    modifier: Modifier = Modifier,
+    mensagem: String = "Resíduo cadastrado com sucesso!"
+) {
 
     // Carrega a animação Lottie salva no projeto
     val composition by rememberLottieComposition(
@@ -56,11 +59,11 @@ fun AnimacaoSucessoResiduo(modifier: Modifier = Modifier) {
 
         // Mensagem exibida abaixo da animação
         Text(
-            text = "Resíduo cadastrado com sucesso!",
+            text = mensagem,
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
-            color = NovoResiduoConfirmar
+            color = Branco
         )
     }
 }

@@ -36,6 +36,7 @@ import com.example.ecoleta_estabelecimento.features.residuos.components.CardResi
 import com.example.ecoleta_estabelecimento.features.residuos.components.DialogNovoResiduo
 import com.example.ecoleta_estabelecimento.features.residuos.components.FiltrosResiduos
 import com.example.ecoleta_estabelecimento.features.residuos.components.MensagemListaVazia
+import com.example.ecoleta_estabelecimento.features.residuos.model.Residuo
 import com.example.ecoleta_estabelecimento.ui.theme.BordaPadrao
 import com.example.ecoleta_estabelecimento.ui.theme.Branco
 import com.example.ecoleta_estabelecimento.ui.theme.VerdePrincipal
@@ -45,7 +46,10 @@ import com.example.ecoleta_estabelecimento.ui.theme.textoPainel
 import kotlinx.coroutines.delay
 
 fun LazyListScope.ResiduosScreen(
-    viewModel: ResiduosViewModel
+    viewModel: ResiduosViewModel,
+    onCancelarResiduo: (Residuo) -> Unit,
+    onEditarResiduo: (Residuo) -> Unit,
+    onVerColeta: (Residuo) -> Unit
 ) {
 
     // Títulos de Meus Resíduos
@@ -67,7 +71,7 @@ fun LazyListScope.ResiduosScreen(
         // Fecha automaticamente a animação após três segundos
         LaunchedEffect(mostrarAnimacaoSucesso) {
             if (mostrarAnimacaoSucesso) {
-                delay(3000)
+                delay(2000)
                 mostrarAnimacaoSucesso = false
             }
         }
@@ -268,7 +272,16 @@ fun LazyListScope.ResiduosScreen(
                 key = { residuo -> residuo.idResiduo }
             ) { residuo ->
                 CardResiduo(
-                    residuo = residuo
+                    residuo = residuo,
+                    onCancelar = {
+                        onCancelarResiduo(residuo)
+                    },
+                    onEditar = {
+                        onEditarResiduo(residuo)
+                    },
+                    onVerColeta = {
+                        onVerColeta(residuo)
+                    }
                 )
             }
         }
