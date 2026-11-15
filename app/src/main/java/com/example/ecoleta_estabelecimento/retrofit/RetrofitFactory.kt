@@ -13,6 +13,8 @@ object RetrofitFactory {
 
     private const val URL_CELULAR = "http://192.168.0.000:8000/v1/ecoleta/" // IP DO COMPUTADOR LOCAL
 
+    private const val URL_NUVEM = "https://estabelecimentos-ecoleta-tcc.onrender.com/v1/ecoleta/" // URL da API na nuvem
+
     // Altere aqui quando trocar o dispositivo de teste
     private const val BASE_URL = URL_EMULADOR
 
