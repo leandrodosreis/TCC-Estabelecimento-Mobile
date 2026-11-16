@@ -6,16 +6,14 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -38,9 +36,12 @@ import androidx.navigation.compose.rememberNavController
 import com.example.ecoleta_estabelecimento.components.header.HeaderScreen
 import com.example.ecoleta_estabelecimento.components.layout.LayoutPadrao
 import com.example.ecoleta_estabelecimento.components.navigation.BarraNavegacaoInferior
-import com.example.ecoleta_estabelecimento.features.coletas.ColetaExemplo
 import com.example.ecoleta_estabelecimento.features.coletas.ColetasScreen
+import com.example.ecoleta_estabelecimento.features.coletas.ColetasViewModel
+import com.example.ecoleta_estabelecimento.features.coletas.components.DialogConfirmarAceiteOferta
 import com.example.ecoleta_estabelecimento.features.coletas.components.DialogDetalhesOferta
+import com.example.ecoleta_estabelecimento.features.coletas.components.DialogOfertaAceitaSucesso
+import com.example.ecoleta_estabelecimento.features.coletas.model.Coleta
 import com.example.ecoleta_estabelecimento.features.home.HomeScreen
 import com.example.ecoleta_estabelecimento.features.home.HomeViewModel
 import com.example.ecoleta_estabelecimento.features.home.model.OfertaResumo
@@ -53,6 +54,7 @@ import com.example.ecoleta_estabelecimento.features.residuos.components.DialogNo
 import com.example.ecoleta_estabelecimento.features.residuos.model.Residuo
 import com.example.ecoleta_estabelecimento.ui.theme.Branco
 import com.example.ecoleta_estabelecimento.ui.theme.EcoletaEstabelecimentoTheme
+import com.example.ecoleta_estabelecimento.ui.theme.VerdePrincipal
 import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
@@ -136,6 +138,7 @@ private fun NavegacaoEcoleta(
 
     val homeViewModel: HomeViewModel = viewModel()
     val residuosViewModel: ResiduosViewModel = viewModel()
+    val coletasViewModel: ColetasViewModel = viewModel()
 
     // Estados dos diálogos de resíduos
     var residuoParaCancelar by remember {
@@ -150,9 +153,19 @@ private fun NavegacaoEcoleta(
         mutableStateOf<Residuo?>(null)
     }
 
-    // Oferta selecionada ao clicar em "Ver mais"
-    var coletaSelecionada by remember {
-        mutableStateOf<ColetaExemplo?>(null)
+    // ID da oferta cujos detalhes estão abertos
+    var idOfertaDetalhesAberto by remember {
+        mutableStateOf<Int?>(null)
+    }
+
+    // Oferta aguardando confirmação de aceite
+    var ofertaAConfirmar by remember {
+        mutableStateOf<Coleta?>(null)
+    }
+
+    // Nome preenchido pelo funcionário
+    var nomeFuncionarioAConfirmar by remember {
+        mutableStateOf("")
     }
 
     var mostrarAnimacaoEdicao by remember {
@@ -179,6 +192,18 @@ private fun NavegacaoEcoleta(
         }
     }
 
+    // Fecha o diálogo quando o estabelecimento recusar a oferta
+    LaunchedEffect(coletasViewModel.idOfertaRecusada) {
+
+        if (coletasViewModel.idOfertaRecusada != null) {
+            // A API confirmou o PATCH
+            idOfertaDetalhesAberto = null
+
+            coletasViewModel.limparDetalhesOferta()
+            coletasViewModel.limparEstadoRecusarOferta()
+        }
+    }
+
     // Converte os dados da API para o formato utilizado na Home
     val dadosHome = homeViewModel.dadosHome
 
@@ -196,22 +221,6 @@ private fun NavegacaoEcoleta(
         )
     } ?: emptyList()
 
-    // Detalhes da oferta
-    coletaSelecionada?.let { coleta ->
-        DialogDetalhesOferta(
-            coleta = coleta,
-            onDismiss = { coletaSelecionada = null },
-            onAceitar = { oferta, nomeFuncionario ->
-                // Futuramente, vai ter o post da API
-                coletaSelecionada = null
-            },
-            onRecusar = { oferta ->
-                // Futuramente, vai ter o patch da API
-                coletaSelecionada = null
-            }
-        )
-    }
-
     // Função utilizada ao clicar em Sair
     val onLogout: () -> Unit = {
 
@@ -221,9 +230,17 @@ private fun NavegacaoEcoleta(
         residuoParaVerColeta = null
         mostrarAnimacaoEdicao = false
 
+        idOfertaDetalhesAberto = null
+        ofertaAConfirmar = null
+        nomeFuncionarioAConfirmar = ""
+
         // Limpa os estados auxiliares dos diálogos
         residuosViewModel.limparEstadoCancelamentoResiduo()
         residuosViewModel.limparDetalhesColeta()
+
+        coletasViewModel.limparDetalhesOferta()
+        coletasViewModel.limparEstadoAceitarOferta()
+        coletasViewModel.limparEstadoRecusarOferta()
 
         // Envia o usuário para Login
         navController.sairParaLogin()
@@ -449,9 +466,19 @@ private fun NavegacaoEcoleta(
                     onLogout = onLogout
                 ) {
                     ColetasScreen(
+                        viewModel = coletasViewModel,
                         onVerMais = { coleta ->
-                            // Guarda a oferta selecionada para abrir o diálogo
-                            coletaSelecionada = coleta
+                            // Limpa estados de operações anteriores
+                            coletasViewModel.limparEstadoAceitarOferta()
+                            coletasViewModel.limparEstadoRecusarOferta()
+
+                            // Identifica a oferta aberta
+                            idOfertaDetalhesAberto = coleta.idOfertaInicial
+
+                            // Busca os detalhes reais no backend
+                            coletasViewModel.buscarDetalhesColeta(
+                                coleta.idOfertaInicial
+                            )
                         }
                     )
                 }
@@ -560,6 +587,124 @@ private fun NavegacaoEcoleta(
                 residuosViewModel.limparDetalhesColeta()
             }
         )
+    }
+
+    // Diálogo de ofertas
+
+    // 1. ANIMAÇÃO DE SUCESSO
+    if (coletasViewModel.idOfertaAceita != null) {
+        DialogOfertaAceitaSucesso(
+            onConcluir = {
+
+                idOfertaDetalhesAberto = null
+                ofertaAConfirmar = null
+                nomeFuncionarioAConfirmar = ""
+
+                coletasViewModel.limparEstadoAceitarOferta()
+                coletasViewModel.limparDetalhesOferta()
+            }
+        )
+
+    // 2. CONFIRMAÇÃO DO ACEITE
+    } else if (ofertaAConfirmar != null) {
+        DialogConfirmarAceiteOferta(
+            onNao = {
+                // Não envia o POST
+                ofertaAConfirmar = null
+                nomeFuncionarioAConfirmar = ""
+                idOfertaDetalhesAberto = null
+
+                coletasViewModel.limparEstadoAceitarOferta()
+                coletasViewModel.limparDetalhesOferta()
+            },
+            onSim = {
+                // Envia o POST somente depois do SIM
+                ofertaAConfirmar?.let { oferta ->
+                    coletasViewModel.aceitarOferta(
+                        idOferta = oferta.idOfertaInicial,
+                        nomeFuncionario = nomeFuncionarioAConfirmar
+                    )
+                }
+            },
+
+            carregando = coletasViewModel.aceitandoOferta,
+            mensagemErro = coletasViewModel.erroAceitarOferta
+        )
+
+    // 3. DETALHES DA OFERTA
+    } else if (idOfertaDetalhesAberto != null) {
+        val idAberto = idOfertaDetalhesAberto
+        val detalhes = coletasViewModel.detalhesOferta?.takeIf { it.idOfertaInicial == idAberto }
+
+        if (detalhes != null) {
+            DialogDetalhesOferta(
+                coleta = detalhes,
+                onDismiss = {
+
+                    if (!coletasViewModel.recusandoOferta) {
+                        idOfertaDetalhesAberto = null
+                        coletasViewModel.limparDetalhesOferta()
+                        coletasViewModel.limparEstadoRecusarOferta()
+                    }
+                },
+
+                // ACEITAR: abre a confirmação
+                onAceitar = { oferta, nomeFuncionario ->
+                    coletasViewModel.limparEstadoAceitarOferta()
+                    ofertaAConfirmar = oferta
+                    nomeFuncionarioAConfirmar = nomeFuncionario
+                },
+
+                // RECUSAR: envia o PATCH imediatamente
+                onRecusar = { oferta ->
+                    coletasViewModel.limparEstadoRecusarOferta()
+                    coletasViewModel.recusarOferta(idOferta = oferta.idOfertaInicial)
+                },
+                carregandoOperacao = coletasViewModel.recusandoOferta,
+                mensagemErroOperacao = coletasViewModel.erroRecusarOferta
+            )
+        } else if (coletasViewModel.carregandoDetalhesOferta) {
+            // Carregando os detalhes da oferta
+            Dialog(
+                onDismissRequest = {
+                    idOfertaDetalhesAberto = null
+                    coletasViewModel.limparDetalhesOferta()
+                }
+            ) {
+                CircularProgressIndicator(
+                    color = VerdePrincipal
+                )
+            }
+        } else {
+            // Erro ao buscar os detalhes
+            AlertDialog(
+                onDismissRequest = {
+                    idOfertaDetalhesAberto = null
+                    coletasViewModel.limparDetalhesOferta()
+                },
+
+                title = {
+                    Text("Não foi possível abrir a oferta")
+                },
+
+                text = {
+                    Text(
+                        text = coletasViewModel.erroDetalhesOferta?: "Os detalhes da oferta não estão disponíveis."
+                    )
+                },
+
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            idOfertaDetalhesAberto = null
+                            coletasViewModel.limparDetalhesOferta()
+                        }
+                    ) {
+                        Text("Fechar")
+                    }
+                }
+            )
+        }
     }
 }
 

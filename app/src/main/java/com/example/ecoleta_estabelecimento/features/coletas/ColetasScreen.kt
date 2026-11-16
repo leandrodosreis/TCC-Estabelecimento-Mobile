@@ -5,68 +5,26 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ecoleta_estabelecimento.features.coletas.components.CardColeta
 import com.example.ecoleta_estabelecimento.features.coletas.components.FiltroColetas
+import com.example.ecoleta_estabelecimento.features.coletas.model.Coleta
 import com.example.ecoleta_estabelecimento.ui.theme.HomeTextoSecundario
+import com.example.ecoleta_estabelecimento.ui.theme.NovoResiduoErro
 import com.example.ecoleta_estabelecimento.ui.theme.VerdePrincipal
 import com.example.ecoleta_estabelecimento.ui.theme.nomeTela
 import com.example.ecoleta_estabelecimento.ui.theme.subTitulo
 import com.example.ecoleta_estabelecimento.ui.theme.textoPainel
 
-// Será substituído pela model da API
-data class ColetaExemplo(
-    val id: Int,
-    val empresa: String,
-    val material: String,
-    val quantidade: String,
-    val distancia: String,
-    val valor: String,
-    val status: String
-)
-
-// Dados fictícios para construir o design
-private val coletasExemplo = listOf(
-    ColetaExemplo(
-        id = 1,
-        empresa = "XYZ Coletas",
-        material = "Vidro",
-        quantidade = "15 kg",
-        distancia = "2,4 km",
-        valor = "R$ 20,00",
-        status = "pendente"
-    ),
-    ColetaExemplo(
-        id = 2,
-        empresa = "XYZ Coletas",
-        material = "Vidro",
-        quantidade = "15 kg",
-        distancia = "2,4 km",
-        valor = "R$ 20,00",
-        status = "pendente"
-    ),
-    ColetaExemplo(
-        id = 3,
-        empresa = "XYZ Coletas",
-        material = "Vidro",
-        quantidade = "15 kg",
-        distancia = "2,4 km",
-        valor = "R$ 20,00",
-        status = "aceita"
-    )
-)
-
 fun LazyListScope.ColetasScreen(
-    onVerMais: (ColetaExemplo) -> Unit = {}
+    viewModel: ColetasViewModel,
+    onVerMais: (Coleta) -> Unit
 ) {
     item {
         Column {
@@ -103,50 +61,61 @@ fun LazyListScope.ColetasScreen(
         }
     }
 
+    // Filtros e ofertas
     item {
-        // Estado do filtro selecionado
-        var filtroSelecionado by remember {
-            mutableStateOf("Todas")
-        }
-
-        // Separação das ofertas por status
-        val ofertasPendentes = coletasExemplo.filter {
-            it.status == "pendente"
-        }
-
-        val ofertasAceitas = coletasExemplo.filter {
-            it.status == "aceita"
-        }
-
         Column(
             verticalArrangement = Arrangement.spacedBy(28.dp)
         ) {
             // Filtro Todas / Pendentes / Aceitas
             FiltroColetas(
-                filtroSelecionado = filtroSelecionado,
+                filtroSelecionado = viewModel.filtroSelecionado,
                 onFiltroSelecionado = { novoFiltro ->
-                    filtroSelecionado = novoFiltro
+                    viewModel.atualizarFiltro(novoFiltro)
                 }
             )
 
-            // Ofertas pendentes
-            if (filtroSelecionado == "Todas" || filtroSelecionado == "Pendentes") {
-                SecaoColetas(
-                    titulo = "Ofertas pendentes",
-                    subtitulo = "ATENÇÃO NECESSÁRIA",
-                    coletas = ofertasPendentes,
-                    onVerMais = onVerMais
+            // Carregamento inicial
+            if (viewModel.carregandoColetas && viewModel.coletas.isEmpty()) {
+                CircularProgressIndicator(
+                    color = VerdePrincipal
                 )
-            }
+            } else if (viewModel.erroCarregamentoColetas != null && viewModel.coletas.isEmpty()) {
+                // Erro ao buscar as ofertas
+                Text(
+                    text = viewModel.erroCarregamentoColetas
+                        ?: "Não foi possível carregar as ofertas.",
+                    color = NovoResiduoErro,
+                    fontSize = 13.sp
+                )
+            } else {
+                // Ofertas pendentes
+                if (viewModel.filtroSelecionado == "Todas" || viewModel.filtroSelecionado == "Pendentes") {
+                    SecaoColetas(
+                        titulo = "Ofertas pendentes",
+                        subtitulo = "ATENÇÃO NECESSÁRIA",
+                        coletas = viewModel.ofertasPendentes,
+                        onVerMais = onVerMais
+                    )
+                }
 
-            // Ofertas aceitas
-            if (filtroSelecionado == "Todas" || filtroSelecionado == "Aceitas") {
-                SecaoColetas(
-                    titulo = "Ofertas aceitas",
-                    subtitulo = "OFERTAS CONFIRMADAS",
-                    coletas = ofertasAceitas,
-                    onVerMais = onVerMais
-                )
+                // Ofertas aceitas
+                if (viewModel.filtroSelecionado == "Todas" || viewModel.filtroSelecionado == "Aceitas") {
+                    SecaoColetas(
+                        titulo = "Ofertas aceitas",
+                        subtitulo = "OFERTAS CONFIRMADAS",
+                        coletas = viewModel.ofertasAceitas,
+                        onVerMais = onVerMais
+                    )
+                }
+
+                // Exibe erro de atualização sem remover os cards que já estavam carregados
+                if (viewModel.erroCarregamentoColetas != null) {
+                    Text(
+                        text = viewModel.erroCarregamentoColetas ?: "",
+                        color = NovoResiduoErro,
+                        fontSize = 13.sp
+                    )
+                }
             }
         }
     }
@@ -157,8 +126,8 @@ fun LazyListScope.ColetasScreen(
 private fun SecaoColetas(
     titulo: String,
     subtitulo: String,
-    coletas: List<ColetaExemplo>,
-    onVerMais: (ColetaExemplo) -> Unit
+    coletas: List<Coleta>,
+    onVerMais: (Coleta) -> Unit
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(14.dp)
