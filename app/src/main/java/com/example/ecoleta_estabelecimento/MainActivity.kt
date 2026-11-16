@@ -38,6 +38,9 @@ import androidx.navigation.compose.rememberNavController
 import com.example.ecoleta_estabelecimento.components.header.HeaderScreen
 import com.example.ecoleta_estabelecimento.components.layout.LayoutPadrao
 import com.example.ecoleta_estabelecimento.components.navigation.BarraNavegacaoInferior
+import com.example.ecoleta_estabelecimento.features.coletas.ColetaExemplo
+import com.example.ecoleta_estabelecimento.features.coletas.ColetasScreen
+import com.example.ecoleta_estabelecimento.features.coletas.components.DialogDetalhesOferta
 import com.example.ecoleta_estabelecimento.features.home.HomeScreen
 import com.example.ecoleta_estabelecimento.features.home.HomeViewModel
 import com.example.ecoleta_estabelecimento.features.home.model.OfertaResumo
@@ -147,6 +150,11 @@ private fun NavegacaoEcoleta(
         mutableStateOf<Residuo?>(null)
     }
 
+    // Oferta selecionada ao clicar em "Ver mais"
+    var coletaSelecionada by remember {
+        mutableStateOf<ColetaExemplo?>(null)
+    }
+
     var mostrarAnimacaoEdicao by remember {
         mutableStateOf(false)
     }
@@ -187,6 +195,22 @@ private fun NavegacaoEcoleta(
             status = oferta.statusOferta
         )
     } ?: emptyList()
+
+    // Detalhes da oferta
+    coletaSelecionada?.let { coleta ->
+        DialogDetalhesOferta(
+            coleta = coleta,
+            onDismiss = { coletaSelecionada = null },
+            onAceitar = { oferta, nomeFuncionario ->
+                // Futuramente, vai ter o post da API
+                coletaSelecionada = null
+            },
+            onRecusar = { oferta ->
+                // Futuramente, vai ter o patch da API
+                coletaSelecionada = null
+            }
+        )
+    }
 
     // Função utilizada ao clicar em Sair
     val onLogout: () -> Unit = {
@@ -424,9 +448,12 @@ private fun NavegacaoEcoleta(
                     navController = navController,
                     onLogout = onLogout
                 ) {
-                    item {
-                        Text("Tela de Coletas")
-                    }
+                    ColetasScreen(
+                        onVerMais = { coleta ->
+                            // Guarda a oferta selecionada para abrir o diálogo
+                            coletaSelecionada = coleta
+                        }
+                    )
                 }
             }
 
