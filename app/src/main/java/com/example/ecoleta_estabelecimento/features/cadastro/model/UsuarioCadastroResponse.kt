@@ -1,46 +1,34 @@
 package com.example.ecoleta_estabelecimento.features.cadastro.model
 
+import com.google.gson.JsonElement
 import com.google.gson.annotations.SerializedName
-
-data class UsuarioCadastroResponse (
-    // Indica se a operação foi realizada com sucesso
-    val status: Boolean,
-
-    @SerializedName("status_code")
-    val statusCode: Int,
-
-    // Mensagem retornada pelo backend
-    val message: String?,
-
-    // Contém os dados do resíduo cadastrado
-    val response: UsuarioCadastrado
-)
 
 // Representa os dados do resíduo retornados pelo backend
 data class UsuarioCadastrado(
     // ID gerado pelo backend para o novo resíduo.
-    @SerializedName("nome_empresa")
-    val nomeEmpresa: String,
+    @SerializedName("nome_empresa") val nomeEmpresa: String,
+    @SerializedName("cnpj") val cnpj: String,
+    @SerializedName("cep") val horarioFinal: String,
+    @SerializedName("logradouro") val logradouro: String,
+    @SerializedName("bairro") val idTipoMaterial: Int,
+    @SerializedName("cidade") val idEstabelecimento: Int,
+    @SerializedName("estado") val estado: String,
+    @SerializedName("numero") val numedo: String,
+    @SerializedName("email") val email: String,
+    @SerializedName("telefone") val tell: String,
+    @SerializedName("senha") val senha: String
+)
 
-    @SerializedName("cnpj")
-    val cnpj: String,
+data class UsuarioCadastroResponse (
+    // Indica se a operação foi realizada com sucesso
+    val status: Boolean? = null,
 
-    @SerializedName("cep")
-    val horarioFinal: String,
+    @SerializedName("status_code")
+    val statusCode: Int? = null,
 
-    val quantidade: Double,
+    // Mensagem retornada pelo backend
+    val message: String? = null,
 
-    @SerializedName("data_disponivel")
-    val dataDisponivel: String,
-
-    val observacao: String?,
-
-    @SerializedName("id_tipo_material")
-    val idTipoMaterial: Int,
-
-    @SerializedName("id_estabelecimento")
-    val idEstabelecimento: Int,
-
-    @SerializedName("status_residuo")
-    val statusResiduo: String
+    // Contém os dados do resíduo cadastrado
+    val response: UsuarioCadastrado
 )

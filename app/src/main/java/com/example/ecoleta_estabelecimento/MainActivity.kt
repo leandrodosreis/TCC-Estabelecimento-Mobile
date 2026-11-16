@@ -229,7 +229,12 @@ fun TelaInicial(
             }
 
             "cadastro" -> {
-                CadastroScreen(viewModel = cadastroViewModel)
+                CadastroScreen(
+                    viewModel = cadastroViewModel,
+                    onSair = {
+                        telaAtual= "home"
+                    }
+                )
             }
 
             "login" -> item {

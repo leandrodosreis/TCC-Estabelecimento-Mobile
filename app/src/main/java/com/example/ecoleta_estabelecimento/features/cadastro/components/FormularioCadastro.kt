@@ -41,9 +41,14 @@ import androidx.compose.ui.text.substring
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
+import com.example.ecoleta_estabelecimento.features.cadastro.CadastroViewModel
 
 @Composable
-fun CampoDeCadastro(modifier: Modifier = Modifier) {
+fun CampoDeCadastro(
+    viewModel: CadastroViewModel,
+    onSair: () -> Unit,
+    modifier: Modifier = Modifier) {
 
     var nomeEmpresa by remember { mutableStateOf("") }
     var cnpj by remember { mutableStateOf("") }
@@ -115,7 +120,11 @@ fun CampoDeCadastro(modifier: Modifier = Modifier) {
             )
             CampoTexto(
                 value = nomeEmpresa,
-                onValueChange = { if (it.length <= limiteMaximoNome) nomeEmpresa = it }
+                onValueChange = {
+                    if (it.length <= limiteMaximoNome) {
+                        viewModel.nomeEmpresa = it
+                    }
+                }
             )
         }
 
@@ -129,7 +138,11 @@ fun CampoDeCadastro(modifier: Modifier = Modifier) {
                 )
                 CampoTexto(
                     value = cnpj,
-                    onValueChange = { if (it.length <= limiteMaximoCNPJ) cnpj = it },
+                    onValueChange = {
+                        viewModel.cnpj = it.filter { caractere ->
+                            caractere.isDigit()
+                        }.take(14)
+                    },
                     keyboardType = KeyboardType.Number,
                     visualTransformation = Mascara("##.###.###/####-##")
                 )
@@ -142,7 +155,11 @@ fun CampoDeCadastro(modifier: Modifier = Modifier) {
                 )
                 CampoTexto(
                     value = cep,
-                    onValueChange = { if (it.length <= limiteMaximoCEP) cep = it },
+                    onValueChange = {
+                        viewModel.cep = it.filter { caractere ->
+                            caractere.isDigit()
+                        }.take(8)
+                    },
                     keyboardType = KeyboardType.Number,
                     visualTransformation = Mascara("#####-###")
                 )
@@ -228,7 +245,11 @@ fun CampoDeCadastro(modifier: Modifier = Modifier) {
                 )
                 CampoTexto(
                     value = email,
-                    onValueChange = { if (it.length <= limiteMaximo) email = it },
+                    onValueChange = {
+                        if (it.length <= limiteMaximoEmail) {
+                            viewModel.email = it
+                        }
+                    },
                     keyboardType = KeyboardType.Email
                 )
             }
@@ -256,7 +277,11 @@ fun CampoDeCadastro(modifier: Modifier = Modifier) {
                 )
                 CampoTexto(
                     value = senha,
-                    onValueChange = { if (it.length <= limiteMaximo) senha = it },
+                    onValueChange = {
+                        if (it.length <= limiteMaximo) {
+                            viewModel.senha = it
+                        }
+                    },
                     keyboardType = KeyboardType.Password,
                     senha = true
                 )
@@ -284,7 +309,7 @@ fun CampoDeCadastro(modifier: Modifier = Modifier) {
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Button (
-                onClick = { /* ação */ },
+                onClick = onSair,
                 modifier = Modifier.weight(2f).height(50.dp),
                 shape = RoundedCornerShape(15.dp),
                 colors = ButtonDefaults.buttonColors(
@@ -294,15 +319,21 @@ fun CampoDeCadastro(modifier: Modifier = Modifier) {
             ) { Text("Sair") }
 
             Button(
-                onClick = { /* ação */ },
+                onClick ={ viewModel.cadastrar()},
                 modifier = Modifier.weight(2f).height(50.dp),
                 shape = RoundedCornerShape(15.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xff52B788),
                     contentColor = Color.Black
                 )
-            ) { Text("Cadastrar") }
+            ) { Text(
+                if (viewModel.carregando)"Cadastrando..."
+                      else "cadastrar"
+                )
+            }
+
         }
+
     }
 }
 
