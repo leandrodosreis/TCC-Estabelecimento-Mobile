@@ -5,15 +5,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.ecoleta_estabelecimento.features.home.components.CardBoasVindas
-import com.example.ecoleta_estabelecimento.features.perfil.componenents.CardEndereco
-import com.example.ecoleta_estabelecimento.features.perfil.componenents.CardResumos
-import com.example.ecoleta_estabelecimento.features.residuos.ResiduosViewModel
+import com.example.ecoleta_estabelecimento.features.perfil.components.CardDadosEmpresa
+import com.example.ecoleta_estabelecimento.features.perfil.components.CardEndereco
+import com.example.ecoleta_estabelecimento.features.perfil.components.CardResumos
 import com.example.ecoleta_estabelecimento.ui.theme.nomeTela
 import com.example.ecoleta_estabelecimento.ui.theme.subTitulo
 import com.example.ecoleta_estabelecimento.ui.theme.textoPainel
@@ -67,16 +65,9 @@ fun LazyListScope.PerfilScreen(
 
     }
         item {
-            Text(
-                text = "DADOS EMPRESA",
-                fontWeight = FontWeight.Bold,
-                fontSize = 17.sp,
-                color = textoPainel
-            )
 
 
-            CardEndereco(
-
+            CardDadosEmpresa(
                 nomeEmpresa = "Ecoleta",
                 cnpj = "77.219.861/0001-90",
                 telefone = "40028922",
@@ -88,5 +79,13 @@ fun LazyListScope.PerfilScreen(
         Spacer(modifier = Modifier.height(20.dp))
     }
 
-
+    item {
+        CardEndereco(
+            logradouro = "Rua Belterra 291",
+            bairro = "Pitanguinhas",
+            cidade = "Madagascar",
+            estado = "Acre",
+            cep = "06030102"
+        )
+    }
 }
