@@ -73,4 +73,7 @@ dependencies {
 
     // Animações entre telas
     implementation("androidx.compose.animation:animation")
+
+    // Ícones adicionais do Material Design (olho da senha)
+    implementation("androidx.compose.material:material-icons-extended")
 }
