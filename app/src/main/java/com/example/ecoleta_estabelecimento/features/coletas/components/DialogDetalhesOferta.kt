@@ -13,10 +13,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -177,18 +181,54 @@ fun DialogDetalhesOferta(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(25.dp)
         ) {
+            // Cabeçalho da oferta
             Column(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
+                // ECOLETA e botão de fechar
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         text = "ECOLETA",
                         color = VerdePrincipal,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold
+                    )
+
+                    IconButton(
+                        onClick = {
+                            limparFoco()
+                            onDismiss()
+                        },
+                        enabled = !carregandoOperacao
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Fechar detalhes da oferta",
+                            tint = VerdeEscuro
+                        )
+                    }
+                }
+
+                // Nome da empresa e status na mesma linha
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.Top
+                ) {
+
+                    Text(
+                        text = coleta.nomeEmpresaColetora,
+                        modifier = Modifier.weight(1f),
+                        fontSize = 23.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = VerdeEscuro,
+                        softWrap = true
                     )
 
                     Text(
@@ -219,14 +259,6 @@ fun DialogDetalhesOferta(
                             )
                     )
                 }
-
-                // Nome da empresa coletora
-                Text(
-                    text = coleta.nomeEmpresaColetora,
-                    fontSize = 23.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = VerdeEscuro
-                )
             }
 
             // PAINEL DE INFORMAÇÕES
