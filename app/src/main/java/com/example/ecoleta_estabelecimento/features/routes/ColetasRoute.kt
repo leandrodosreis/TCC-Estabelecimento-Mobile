@@ -14,12 +14,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavHostController
+import com.example.ecoleta_estabelecimento.components.DialogSucessoEcoleta.DialogSucessoEcoleta
 import com.example.ecoleta_estabelecimento.components.layout.LayoutPadrao
 import com.example.ecoleta_estabelecimento.features.coletas.ColetasScreen
 import com.example.ecoleta_estabelecimento.features.coletas.ColetasViewModel
 import com.example.ecoleta_estabelecimento.features.coletas.components.DialogConfirmarAceiteOferta
 import com.example.ecoleta_estabelecimento.features.coletas.components.DialogDetalhesOferta
-import com.example.ecoleta_estabelecimento.features.coletas.components.DialogOfertaAceitaSucesso
 import com.example.ecoleta_estabelecimento.features.coletas.model.Coleta
 import com.example.ecoleta_estabelecimento.ui.theme.VerdePrincipal
 
@@ -110,7 +110,8 @@ fun ColetasRoute(
 
     // 1. Animação de sucesso
     if (viewModel.idOfertaAceita != null) {
-        DialogOfertaAceitaSucesso(
+        DialogSucessoEcoleta(
+            mensagem = "A oferta foi aceita!",
             onConcluir = {
                 idOfertaDetalhesAberto = null
                 ofertaAConfirmar = null

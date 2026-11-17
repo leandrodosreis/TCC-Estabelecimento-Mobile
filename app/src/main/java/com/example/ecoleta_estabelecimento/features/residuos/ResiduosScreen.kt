@@ -21,7 +21,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,9 +32,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
+import com.example.ecoleta_estabelecimento.components.DialogSucessoEcoleta.DialogSucessoEcoleta
 import com.example.ecoleta_estabelecimento.components.loading.CarregamentoEcoleta
-import com.example.ecoleta_estabelecimento.features.residuos.components.AnimacaoSucessoResiduo
 import com.example.ecoleta_estabelecimento.features.residuos.components.BotaoNovoResiduo
 import com.example.ecoleta_estabelecimento.features.residuos.components.CardResiduo
 import com.example.ecoleta_estabelecimento.features.residuos.components.DialogNovoResiduo
@@ -48,7 +46,6 @@ import com.example.ecoleta_estabelecimento.ui.theme.VerdePrincipal
 import com.example.ecoleta_estabelecimento.ui.theme.nomeTela
 import com.example.ecoleta_estabelecimento.ui.theme.subTitulo
 import com.example.ecoleta_estabelecimento.ui.theme.textoPainel
-import kotlinx.coroutines.delay
 
 fun LazyListScope.ResiduosScreen(
     viewModel: ResiduosViewModel,
@@ -71,14 +68,6 @@ fun LazyListScope.ResiduosScreen(
         // Controla se a animação de sucesso está visível
         var mostrarAnimacaoSucesso by remember {
             mutableStateOf(false)
-        }
-
-        // Fecha automaticamente a animação após três segundos
-        LaunchedEffect(mostrarAnimacaoSucesso) {
-            if (mostrarAnimacaoSucesso) {
-                delay(2000)
-                mostrarAnimacaoSucesso = false
-            }
         }
 
         Column(
@@ -214,12 +203,12 @@ fun LazyListScope.ResiduosScreen(
 
         // Mostra a animação Lottie sobre a tela de resíduos
         if (mostrarAnimacaoSucesso) {
-            Dialog(
-                // Não permite fechar tocando fora da animação
-                onDismissRequest = {}
-            ) {
-                AnimacaoSucessoResiduo()
-            }
+            DialogSucessoEcoleta(
+                mensagem = "Resíduo cadastrado com sucesso!",
+                onConcluir = {
+                    mostrarAnimacaoSucesso = false
+                }
+            )
         }
     }
 

@@ -8,17 +8,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavHostController
+import com.example.ecoleta_estabelecimento.components.DialogSucessoEcoleta.DialogSucessoEcoleta
 import com.example.ecoleta_estabelecimento.components.layout.LayoutPadrao
 import com.example.ecoleta_estabelecimento.features.residuos.ResiduosScreen
 import com.example.ecoleta_estabelecimento.features.residuos.ResiduosViewModel
-import com.example.ecoleta_estabelecimento.features.residuos.components.AnimacaoSucessoResiduo
 import com.example.ecoleta_estabelecimento.features.residuos.components.DialogCancelarResiduo
 import com.example.ecoleta_estabelecimento.features.residuos.components.DialogDetalhesColeta
 import com.example.ecoleta_estabelecimento.features.residuos.components.DialogNovoResiduo
 import com.example.ecoleta_estabelecimento.features.residuos.model.Residuo
-import kotlinx.coroutines.delay
 
 @Composable
 fun ResiduosRoute(
@@ -60,14 +58,6 @@ fun ResiduosRoute(
     // Controle da animação de edição
     var mostrarAnimacaoEdicao by remember {
         mutableStateOf(false)
-    }
-
-    // Fecha a animação automaticamente
-    LaunchedEffect(mostrarAnimacaoEdicao) {
-        if (mostrarAnimacaoEdicao) {
-            delay(2000)
-            mostrarAnimacaoEdicao = false
-        }
     }
 
     // Fecha o diálogo após cancelamento confirmado pela API
@@ -165,13 +155,12 @@ fun ResiduosRoute(
 
     // Animação de sucesso da edição
     if (mostrarAnimacaoEdicao) {
-        Dialog(
-            onDismissRequest = {
+        DialogSucessoEcoleta(
+            mensagem = "Resíduo editado com sucesso!",
+            onConcluir = {
                 mostrarAnimacaoEdicao = false
             }
-        ) {
-            AnimacaoSucessoResiduo(mensagem = "Resíduo editado com sucesso!")
-        }
+        )
     }
 
     // Diálogo com detalhes da coleta

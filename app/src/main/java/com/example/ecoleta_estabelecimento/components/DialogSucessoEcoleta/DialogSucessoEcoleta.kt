@@ -1,4 +1,4 @@
-package com.example.ecoleta_estabelecimento.features.coletas.components
+package com.example.ecoleta_estabelecimento.components.DialogSucessoEcoleta
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -14,7 +14,8 @@ import com.example.ecoleta_estabelecimento.ui.theme.VerdeEscuro
 import kotlinx.coroutines.delay
 
 @Composable
-fun DialogOfertaAceitaSucesso(
+fun DialogSucessoEcoleta(
+    mensagem: String,
     onConcluir: () -> Unit
 ) {
     Dialog(
@@ -26,7 +27,7 @@ fun DialogOfertaAceitaSucesso(
         )
     ) {
         LaunchedEffect(Unit) {
-            delay(2200)
+            delay(2000)
             onConcluir()
         }
 
@@ -36,9 +37,8 @@ fun DialogOfertaAceitaSucesso(
                 .background(VerdeEscuro),
             contentAlignment = Alignment.Center
         ) {
-
             AnimacaoSucessoResiduo(
-                mensagem = "A oferta foi aceita!"
+                mensagem = mensagem
             )
         }
     }
