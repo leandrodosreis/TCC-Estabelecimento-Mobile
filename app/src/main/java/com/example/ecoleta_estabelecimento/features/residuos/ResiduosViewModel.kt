@@ -354,8 +354,10 @@ class ResiduosViewModel : ViewModel() {
                     val corpo = resposta.body()
 
                     if (corpo?.status == true) {
-                        // Atualiza a lista observada pelo Compose
-                        residuos = corpo.response
+                        // Só atualiza o estado quando a lista mudar
+                        if (residuos != corpo.response) {
+                            residuos = corpo.response
+                        }
                     } else {
                         erroCarregamentoResiduos = "Não foi possível carregar os resíduos."
                     }

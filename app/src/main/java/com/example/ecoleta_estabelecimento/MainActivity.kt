@@ -11,21 +11,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -36,26 +29,14 @@ import androidx.navigation.compose.rememberNavController
 import com.example.ecoleta_estabelecimento.components.header.HeaderScreen
 import com.example.ecoleta_estabelecimento.components.layout.LayoutPadrao
 import com.example.ecoleta_estabelecimento.components.navigation.BarraNavegacaoInferior
-import com.example.ecoleta_estabelecimento.features.coletas.ColetasScreen
 import com.example.ecoleta_estabelecimento.features.coletas.ColetasViewModel
-import com.example.ecoleta_estabelecimento.features.coletas.components.DialogConfirmarAceiteOferta
-import com.example.ecoleta_estabelecimento.features.coletas.components.DialogDetalhesOferta
-import com.example.ecoleta_estabelecimento.features.coletas.components.DialogOfertaAceitaSucesso
-import com.example.ecoleta_estabelecimento.features.coletas.model.Coleta
-import com.example.ecoleta_estabelecimento.features.home.HomeScreen
 import com.example.ecoleta_estabelecimento.features.home.HomeViewModel
-import com.example.ecoleta_estabelecimento.features.home.model.OfertaResumo
-import com.example.ecoleta_estabelecimento.features.residuos.ResiduosScreen
 import com.example.ecoleta_estabelecimento.features.residuos.ResiduosViewModel
-import com.example.ecoleta_estabelecimento.features.residuos.components.AnimacaoSucessoResiduo
-import com.example.ecoleta_estabelecimento.features.residuos.components.DialogCancelarResiduo
-import com.example.ecoleta_estabelecimento.features.residuos.components.DialogDetalhesColeta
-import com.example.ecoleta_estabelecimento.features.residuos.components.DialogNovoResiduo
-import com.example.ecoleta_estabelecimento.features.residuos.model.Residuo
+import com.example.ecoleta_estabelecimento.features.routes.ColetasRoute
+import com.example.ecoleta_estabelecimento.features.routes.HomeRoute
+import com.example.ecoleta_estabelecimento.features.routes.ResiduosRoute
 import com.example.ecoleta_estabelecimento.ui.theme.Branco
 import com.example.ecoleta_estabelecimento.ui.theme.EcoletaEstabelecimentoTheme
-import com.example.ecoleta_estabelecimento.ui.theme.VerdePrincipal
-import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
 
@@ -140,99 +121,8 @@ private fun NavegacaoEcoleta(
     val residuosViewModel: ResiduosViewModel = viewModel()
     val coletasViewModel: ColetasViewModel = viewModel()
 
-    // Estados dos diálogos de resíduos
-    var residuoParaCancelar by remember {
-        mutableStateOf<Residuo?>(null)
-    }
-
-    var residuoParaEditar by remember {
-        mutableStateOf<Residuo?>(null)
-    }
-
-    var residuoParaVerColeta by remember {
-        mutableStateOf<Residuo?>(null)
-    }
-
-    // ID da oferta cujos detalhes estão abertos
-    var idOfertaDetalhesAberto by remember {
-        mutableStateOf<Int?>(null)
-    }
-
-    // Oferta aguardando confirmação de aceite
-    var ofertaAConfirmar by remember {
-        mutableStateOf<Coleta?>(null)
-    }
-
-    // Nome preenchido pelo funcionário
-    var nomeFuncionarioAConfirmar by remember {
-        mutableStateOf("")
-    }
-
-    var mostrarAnimacaoEdicao by remember {
-        mutableStateOf(false)
-    }
-
-    // Exibe a animação de edição
-    LaunchedEffect(mostrarAnimacaoEdicao) {
-        if (mostrarAnimacaoEdicao) {
-            delay(2000)
-            mostrarAnimacaoEdicao = false
-        }
-    }
-
-    // Fecha o diálogo quando o cancelamento for confirmado
-    LaunchedEffect(residuosViewModel.idResiduoCancelado) {
-
-        val idCancelado = residuosViewModel.idResiduoCancelado
-        if (idCancelado != null) {
-            if (residuoParaCancelar?.idResiduo == idCancelado) {
-                residuoParaCancelar = null
-            }
-            residuosViewModel.limparEstadoCancelamentoResiduo()
-        }
-    }
-
-    // Fecha o diálogo quando o estabelecimento recusar a oferta
-    LaunchedEffect(coletasViewModel.idOfertaRecusada) {
-
-        if (coletasViewModel.idOfertaRecusada != null) {
-            // A API confirmou o PATCH
-            idOfertaDetalhesAberto = null
-
-            coletasViewModel.limparDetalhesOferta()
-            coletasViewModel.limparEstadoRecusarOferta()
-        }
-    }
-
-    // Converte os dados da API para o formato utilizado na Home
-    val dadosHome = homeViewModel.dadosHome
-
-    val ofertas = dadosHome?.ofertas?.map { oferta ->
-        OfertaResumo(
-            id = oferta.idOfertaInicial,
-            nomeColetor = oferta.nomeEmpresaColetora,
-            material = oferta.material,
-            quantidadeKg = oferta.quantidade,
-            data = oferta.dataDisponivel,
-            valor = oferta.valorOfertado
-                .replace(",", ".")
-                .toDoubleOrNull() ?: 0.0,
-            status = oferta.statusOferta
-        )
-    } ?: emptyList()
-
     // Função utilizada ao clicar em Sair
     val onLogout: () -> Unit = {
-
-        // Fecha eventuais diálogos abertos
-        residuoParaCancelar = null
-        residuoParaEditar = null
-        residuoParaVerColeta = null
-        mostrarAnimacaoEdicao = false
-
-        idOfertaDetalhesAberto = null
-        ofertaAConfirmar = null
-        nomeFuncionarioAConfirmar = ""
 
         // Limpa os estados auxiliares dos diálogos
         residuosViewModel.limparEstadoCancelamentoResiduo()
@@ -376,51 +266,13 @@ private fun NavegacaoEcoleta(
             // =====
 
             composable(route = Rotas.HOME) {
-                // Atualiza a Home enquanto estiver nesta tela
-                LaunchedEffect(Unit) {
-                    homeViewModel.buscarHome()
-
-                    while (true) {
-                        delay(5_000)
-                        homeViewModel.buscarHome()
-                    }
-                }
-
-                TelaInterna(
-                    rotaAtual = Rotas.HOME,
-                    navController = navController,
+                HomeRoute(
+                    viewModel = homeViewModel,
+                    onNavigate = { rota ->
+                        navController.navegarMenu(rota)
+                    },
                     onLogout = onLogout
-                ) {
-                    HomeScreen(
-                        resumo = dadosHome?.resumo,
-                        ofertas = ofertas,
-                        // Botão para acessar Meus Resíduos
-                        onCadastrarResiduo = {
-                            navController.navegarMenu(Rotas.RESIDUOS)
-                        },
-                        // Botão para acessar Coletas
-                        onVerTodasOfertas = {
-                            navController.navegarMenu(Rotas.COLETAS)
-                        },
-                        onVerOferta = { idOferta ->
-                            println("Oferta selecionada: $idOferta")
-                        }
-                    )
-
-                    // Indica carregamento da Home
-                    if (homeViewModel.carregando) {
-                        item {
-                            Text("Carregando dados da Home...")
-                        }
-                    }
-
-                    // Exibe eventuais erros
-                    homeViewModel.mensagemErro?.let { erro ->
-                        item {
-                            Text(erro)
-                        }
-                    }
-                }
+                )
             }
 
             // ==============
@@ -428,31 +280,14 @@ private fun NavegacaoEcoleta(
             // ==============
 
             composable(route = Rotas.RESIDUOS) {
-                TelaInterna(
-                    rotaAtual = Rotas.RESIDUOS,
+                ResiduosRoute(
                     navController = navController,
+                    viewModel = residuosViewModel,
+                    onNavigate = { rota ->
+                        navController.navegarMenu(rota)
+                    },
                     onLogout = onLogout
-                ) {
-                    ResiduosScreen(
-                        viewModel = residuosViewModel,
-                        // Abre o diálogo de cancelamento
-                        onCancelarResiduo = { residuo ->
-                            residuosViewModel.limparEstadoCancelamentoResiduo()
-                            residuoParaCancelar = residuo
-                        },
-                        // Abre o diálogo de edição
-                        onEditarResiduo = { residuo ->
-                            residuoParaEditar = residuo
-                        },
-                        // Consulta os detalhes da coleta
-                        onVerColeta = { residuo ->
-                            residuoParaVerColeta = residuo
-                            residuosViewModel.buscarDetalhesColeta(
-                                residuo.idResiduo
-                            )
-                        }
-                    )
-                }
+                )
             }
 
             // ========
@@ -460,28 +295,14 @@ private fun NavegacaoEcoleta(
             // ========
 
             composable(route = Rotas.COLETAS) {
-                TelaInterna(
-                    rotaAtual = Rotas.COLETAS,
+                ColetasRoute(
                     navController = navController,
+                    viewModel = coletasViewModel,
+                    onNavigate = { rota ->
+                        navController.navegarMenu(rota)
+                    },
                     onLogout = onLogout
-                ) {
-                    ColetasScreen(
-                        viewModel = coletasViewModel,
-                        onVerMais = { coleta ->
-                            // Limpa estados de operações anteriores
-                            coletasViewModel.limparEstadoAceitarOferta()
-                            coletasViewModel.limparEstadoRecusarOferta()
-
-                            // Identifica a oferta aberta
-                            idOfertaDetalhesAberto = coleta.idOfertaInicial
-
-                            // Busca os detalhes reais no backend
-                            coletasViewModel.buscarDetalhesColeta(
-                                coleta.idOfertaInicial
-                            )
-                        }
-                    )
-                }
+                )
             }
 
             // ==========
@@ -524,184 +345,6 @@ private fun NavegacaoEcoleta(
 
                 onNavigate = { rota ->
                     navController.navegarMenu(rota)
-                }
-            )
-        }
-    }
-
-    // Diálogo de cancelamento
-    residuoParaCancelar?.let { residuo ->
-        DialogCancelarResiduo(
-            residuo = residuo,
-            viewModel = residuosViewModel,
-            onDismiss = {
-                if (!residuosViewModel.cancelandoResiduo) {
-                    residuosViewModel.limparEstadoCancelamentoResiduo()
-
-                    residuoParaCancelar = null
-                }
-            },
-
-            onConfirmar = { idResiduo ->
-                residuosViewModel.cancelarResiduo(idResiduo)
-            }
-        )
-    }
-
-    // Diálogo de edição
-    residuoParaEditar?.let { residuo ->
-        DialogNovoResiduo(
-            residuoParaEditar = residuo,
-            viewModel = residuosViewModel,
-            onDismiss = {
-                if (!residuosViewModel.editandoResiduo) {
-                    residuoParaEditar = null
-                }
-            },
-            onCadastroSucesso = {},
-            onEdicaoSucesso = {
-                residuoParaEditar = null
-                mostrarAnimacaoEdicao = true
-            }
-        )
-    }
-
-    // Animação de sucesso de edição
-    if (mostrarAnimacaoEdicao) {
-        Dialog(
-            onDismissRequest = {
-                mostrarAnimacaoEdicao = false
-            }
-        ) {
-            AnimacaoSucessoResiduo(mensagem = "Resíduo editado com sucesso!")
-        }
-    }
-
-    // Diálogo com detalhes da coleta
-    if (residuoParaVerColeta != null) {
-        DialogDetalhesColeta(
-            viewModel = residuosViewModel,
-
-            onDismiss = {
-                residuoParaVerColeta = null
-                residuosViewModel.limparDetalhesColeta()
-            }
-        )
-    }
-
-    // Diálogo de ofertas
-
-    // 1. ANIMAÇÃO DE SUCESSO
-    if (coletasViewModel.idOfertaAceita != null) {
-        DialogOfertaAceitaSucesso(
-            onConcluir = {
-
-                idOfertaDetalhesAberto = null
-                ofertaAConfirmar = null
-                nomeFuncionarioAConfirmar = ""
-
-                coletasViewModel.limparEstadoAceitarOferta()
-                coletasViewModel.limparDetalhesOferta()
-            }
-        )
-
-    // 2. CONFIRMAÇÃO DO ACEITE
-    } else if (ofertaAConfirmar != null) {
-        DialogConfirmarAceiteOferta(
-            onNao = {
-                // Não envia o POST
-                ofertaAConfirmar = null
-                nomeFuncionarioAConfirmar = ""
-                idOfertaDetalhesAberto = null
-
-                coletasViewModel.limparEstadoAceitarOferta()
-                coletasViewModel.limparDetalhesOferta()
-            },
-            onSim = {
-                // Envia o POST somente depois do SIM
-                ofertaAConfirmar?.let { oferta ->
-                    coletasViewModel.aceitarOferta(
-                        idOferta = oferta.idOfertaInicial,
-                        nomeFuncionario = nomeFuncionarioAConfirmar
-                    )
-                }
-            },
-
-            carregando = coletasViewModel.aceitandoOferta,
-            mensagemErro = coletasViewModel.erroAceitarOferta
-        )
-
-    // 3. DETALHES DA OFERTA
-    } else if (idOfertaDetalhesAberto != null) {
-        val idAberto = idOfertaDetalhesAberto
-        val detalhes = coletasViewModel.detalhesOferta?.takeIf { it.idOfertaInicial == idAberto }
-
-        if (detalhes != null) {
-            DialogDetalhesOferta(
-                coleta = detalhes,
-                onDismiss = {
-
-                    if (!coletasViewModel.recusandoOferta) {
-                        idOfertaDetalhesAberto = null
-                        coletasViewModel.limparDetalhesOferta()
-                        coletasViewModel.limparEstadoRecusarOferta()
-                    }
-                },
-
-                // ACEITAR: abre a confirmação
-                onAceitar = { oferta, nomeFuncionario ->
-                    coletasViewModel.limparEstadoAceitarOferta()
-                    ofertaAConfirmar = oferta
-                    nomeFuncionarioAConfirmar = nomeFuncionario
-                },
-
-                // RECUSAR: envia o PATCH imediatamente
-                onRecusar = { oferta ->
-                    coletasViewModel.limparEstadoRecusarOferta()
-                    coletasViewModel.recusarOferta(idOferta = oferta.idOfertaInicial)
-                },
-                carregandoOperacao = coletasViewModel.recusandoOferta,
-                mensagemErroOperacao = coletasViewModel.erroRecusarOferta
-            )
-        } else if (coletasViewModel.carregandoDetalhesOferta) {
-            // Carregando os detalhes da oferta
-            Dialog(
-                onDismissRequest = {
-                    idOfertaDetalhesAberto = null
-                    coletasViewModel.limparDetalhesOferta()
-                }
-            ) {
-                CircularProgressIndicator(
-                    color = VerdePrincipal
-                )
-            }
-        } else {
-            // Erro ao buscar os detalhes
-            AlertDialog(
-                onDismissRequest = {
-                    idOfertaDetalhesAberto = null
-                    coletasViewModel.limparDetalhesOferta()
-                },
-
-                title = {
-                    Text("Não foi possível abrir a oferta")
-                },
-
-                text = {
-                    Text(
-                        text = coletasViewModel.erroDetalhesOferta?: "Os detalhes da oferta não estão disponíveis."
-                    )
-                },
-
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            idOfertaDetalhesAberto = null
-                            coletasViewModel.limparDetalhesOferta()
-                        }
-                    ) {
-                        Text("Fechar")
-                    }
                 }
             )
         }
