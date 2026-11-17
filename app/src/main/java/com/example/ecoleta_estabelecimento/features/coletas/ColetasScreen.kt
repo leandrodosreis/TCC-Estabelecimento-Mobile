@@ -165,7 +165,11 @@ private fun SecaoColetas(
     // Cards ou mensagem de lista vazia
     if (coletas.isEmpty()) {
         Text(
-            text = "Nenhuma oferta encontrada.",
+            text = if (titulo == "Ofertas pendentes") {
+                "Nenhuma oferta pendente para seus resíduos."
+            } else {
+                "Você ainda não possui ofertas aceitas."
+            },
             color = HomeTextoSecundario,
             fontSize = 13.sp
         )

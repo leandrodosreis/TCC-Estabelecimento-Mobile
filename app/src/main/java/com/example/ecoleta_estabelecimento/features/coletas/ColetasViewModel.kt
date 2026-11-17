@@ -95,7 +95,11 @@ class ColetasViewModel : ViewModel() {
                 } else {
                     erroCarregamentoColetas = when (resposta.code()) {
                         401 -> "Sua autenticação expirou ou é inválida."
-                        404 -> "Nenhuma oferta foi encontrada."
+                        404 -> {
+                            // O estabelecimento ainda não possui ofertas de coleta
+                            coletas = emptyList()
+                            null
+                        }
                         500 -> "Ocorreu um erro interno no servidor."
                         else -> "Erro ao carregar ofertas. Código: ${resposta.code()}"
                     }

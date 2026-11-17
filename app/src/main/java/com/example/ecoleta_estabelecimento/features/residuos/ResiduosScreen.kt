@@ -124,7 +124,7 @@ fun LazyListScope.ResiduosScreen(
             )
 
             // Exibe os controles somente quando não houver erro na API
-            if ((viewModel.residuos.isNotEmpty() || !viewModel.carregandoResiduos) && viewModel.erroCarregamentoResiduos == null) {
+            if (viewModel.residuos.isNotEmpty() && viewModel.erroCarregamentoResiduos == null) {
                 Spacer(modifier = Modifier.height(30.dp))
 
                 OutlinedTextField(
@@ -176,8 +176,13 @@ fun LazyListScope.ResiduosScreen(
                     idStatusSelecionado = viewModel.idStatusSelecionado,
                     onStatusSelecionado = viewModel::atualizarStatusSelecionado
                 )
+            }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(
+                    // Sem resíduos cadastrados -> Espaçamento de 30.dp
+                    // Com resíduos cadastrados -> Espaçamento de 20.dp
+                    if (viewModel.residuos.isEmpty()) 30.dp else 20.dp
+                ))
 
                 // Chama o componente do Botão de adicionar novo resíduo
                 BotaoNovoResiduo(
@@ -187,7 +192,6 @@ fun LazyListScope.ResiduosScreen(
                     }
                 )
             }
-        }
 
         // Exibe o formulário de cadastro quando solicitado
         if (mostrarDialogNovoResiduo) {
