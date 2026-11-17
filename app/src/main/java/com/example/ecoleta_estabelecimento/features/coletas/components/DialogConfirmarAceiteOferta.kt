@@ -2,17 +2,20 @@ package com.example.ecoleta_estabelecimento.features.coletas.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
@@ -31,7 +34,8 @@ fun DialogConfirmarAceiteOferta(
     onNao: () -> Unit,
     onSim: () -> Unit,
     carregando: Boolean = false,
-    mensagemErro: String? = null
+    mensagemErro: String? = null,
+    modoRecusa: Boolean = false
 ) {
     Dialog(
         onDismissRequest = {
@@ -62,7 +66,11 @@ fun DialogConfirmarAceiteOferta(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    text = "Deseja realmente aceitar a oferta?",
+                    text = if (modoRecusa) {
+                        "Deseja realmente recusar a oferta?"
+                    } else {
+                        "Deseja realmente aceitar a oferta?"
+                    },
                     color = VerdeEscuro,
                     fontSize = 23.sp,
                     fontWeight = FontWeight.Medium,
@@ -120,11 +128,16 @@ fun DialogConfirmarAceiteOferta(
                     )
                 ) {
                     if (carregando) {
-                        CircularProgressIndicator(
-                            color = Branco,
-                            strokeWidth = 2.dp,
-                            modifier = Modifier.height(22.dp)
-                        )
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                color = Branco,
+                                strokeWidth = 2.dp,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
                     } else {
                         Text(
                             text = "SIM",

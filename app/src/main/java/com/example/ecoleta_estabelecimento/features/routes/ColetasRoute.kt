@@ -56,6 +56,11 @@ fun ColetasRoute(
         mutableStateOf<Coleta?>(null)
     }
 
+    // Oferta aguardando confirmação de recusa
+    var ofertaARecusar by remember {
+        mutableStateOf<Coleta?>(null)
+    }
+
     // Nome informado pelo funcionário
     var nomeFuncionarioAConfirmar by remember {
         mutableStateOf("")
@@ -64,6 +69,7 @@ fun ColetasRoute(
     // Fecha os detalhes após recusa confirmada pela API
     LaunchedEffect(viewModel.idOfertaRecusada) {
         if (viewModel.idOfertaRecusada != null) {
+            ofertaARecusar = null
             idOfertaDetalhesAberto = null
             viewModel.limparDetalhesOferta()
             viewModel.limparEstadoRecusarOferta()
@@ -138,7 +144,32 @@ fun ColetasRoute(
             mensagemErro = viewModel.erroAceitarOferta
         )
 
-    // 3. Detalhes da oferta
+    // 3. Confirmação de recusa
+    } else if (ofertaARecusar != null) {
+        DialogConfirmarAceiteOferta(
+            modoRecusa = true,
+            onNao = {
+                // Fecha a confirmação e volta para Coletas
+                ofertaARecusar = null
+                idOfertaDetalhesAberto = null
+
+                viewModel.limparEstadoRecusarOferta()
+                viewModel.limparDetalhesOferta()
+            },
+
+            onSim = {
+                ofertaARecusar?.let { oferta ->
+                    viewModel.recusarOferta(
+                        idOferta = oferta.idOfertaInicial
+                    )
+                }
+            },
+
+            carregando = viewModel.recusandoOferta,
+            mensagemErro = viewModel.erroRecusarOferta
+        )
+
+    // 4. Detalhes da oferta
     } else if (idOfertaDetalhesAberto != null) {
         val idAberto = idOfertaDetalhesAberto
 
@@ -163,9 +194,9 @@ fun ColetasRoute(
                 },
                 onRecusar = { oferta ->
                     viewModel.limparEstadoRecusarOferta()
-                    viewModel.recusarOferta(
-                        idOferta = oferta.idOfertaInicial
-                    )
+
+                    // Guarda a oferta para solicitar confirmação
+                    ofertaARecusar = oferta
                 },
                 carregandoOperacao = viewModel.recusandoOferta,
                 mensagemErroOperacao = viewModel.erroRecusarOferta
