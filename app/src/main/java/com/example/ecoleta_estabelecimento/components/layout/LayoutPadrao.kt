@@ -5,24 +5,25 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.pullToRefreshIndicator
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.changedToDownIgnoreConsumed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
-import com.example.ecoleta_estabelecimento.components.header.HeaderScreen
-import com.example.ecoleta_estabelecimento.components.navigation.BarraNavegacaoInferior
-import com.example.ecoleta_estabelecimento.ui.theme.Branco
+import com.example.ecoleta_estabelecimento.components.loading.CarregamentoEcoleta
+import com.example.ecoleta_estabelecimento.ui.theme.BordaPadrao
 import com.example.ecoleta_estabelecimento.ui.theme.VerdeFundo
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,6 +41,9 @@ fun LayoutPadrao(
     // Gerencia o foco dos campos de texto presentes no conteúdo da tela
     val focusManager = LocalFocusManager.current
 
+    // Controla o deslocamento e a animação do refresh
+    val estadoRefresh = rememberPullToRefreshState()
+
     // Ordem das telas na barra inferior
     val rotas = listOf(
         "home",
@@ -53,7 +57,23 @@ fun LayoutPadrao(
     PullToRefreshBox(
         isRefreshing = atualizando,
         onRefresh = onAtualizar,
-        modifier = modifier.fillMaxSize()
+        modifier = modifier.fillMaxSize(),
+        state = estadoRefresh,
+        indicator = {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .size(48.dp)
+                    .pullToRefreshIndicator(
+                        state = estadoRefresh,
+                        isRefreshing = atualizando,
+                        containerColor = BordaPadrao.copy(alpha = 0.85f)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                CarregamentoEcoleta.Circular()
+            }
+        }
     ) {
         // Conteúdo rolável com navegação por gestos horizontais
         LazyColumn(

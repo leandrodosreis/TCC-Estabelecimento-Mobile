@@ -1,7 +1,6 @@
 package com.example.ecoleta_estabelecimento.features.routes
 
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -20,7 +19,7 @@ fun HomeRoute(
     onNavigate: (String) -> Unit,
     onLogout: () -> Unit
 ) {
-    // Atualiza a Home enquanto estiver nesta tela
+    // Busca os dados ao entrar na Home
     LaunchedEffect(Unit) {
         viewModel.buscarHome()
     }
@@ -73,6 +72,8 @@ fun HomeRoute(
         HomeScreen(
             resumo = dadosHome?.resumo,
             ofertas = ofertas,
+            carregando = viewModel.carregando,
+            erro = viewModel.mensagemErro,
 
             // Botão para acessar Meus Resíduos
             onCadastrarResiduo = {
@@ -89,19 +90,5 @@ fun HomeRoute(
                 println("Oferta selecionada: $idOferta")
             }
         )
-
-        // Indica carregamento da Home
-        if (viewModel.carregando) {
-            item {
-                Text("Carregando dados da Home...")
-            }
-        }
-
-        // Exibe eventuais erros
-        viewModel.mensagemErro?.let { erro ->
-            item {
-                Text(erro)
-            }
-        }
     }
 }

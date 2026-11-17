@@ -26,11 +26,6 @@ class HomeViewModel : ViewModel() {
     var mensagemErro by mutableStateOf<String?>(null)
         private set
 
-    // Busca os dados assim que a ViewModel é criada
-    init {
-        buscarHome()
-    }
-
     fun buscarHome() {
         // Utiliza a coroutine, onde o launch a inicia e permite chamar
         // a função suspend do HomeService sem bloquear a interface

@@ -11,12 +11,12 @@ object RetrofitFactory {
     // URLs para os ambientes de teste
     private const val URL_EMULADOR = "http://10.0.2.2:8000/v1/ecoleta/" // (10.0.2.2) é o endereço especial do emulador Android (IP FIXO)
 
-    private const val URL_CELULAR = "http://192.168.1.107:8000/v1/ecoleta/" // IP DO COMPUTADOR LOCAL
+    private const val URL_CELULAR = "http://192.168.0.000:8000/v1/ecoleta/" // IP DO COMPUTADOR LOCAL
 
     private const val URL_NUVEM = "https://estabelecimentos-ecoleta-tcc.onrender.com/v1/ecoleta/" // URL da API na nuvem
 
     // Altere aqui quando trocar o dispositivo de teste
-    private const val BASE_URL = URL_CELULAR
+    private const val BASE_URL = URL_EMULADOR
 
     // Responsável por fornecer o JWT
     private val tokenProvider: TokenProvider = TokenManual()

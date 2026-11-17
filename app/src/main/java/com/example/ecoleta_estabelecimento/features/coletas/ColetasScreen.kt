@@ -1,22 +1,27 @@
 package com.example.ecoleta_estabelecimento.features.coletas
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.ecoleta_estabelecimento.components.loading.CarregamentoEcoleta
 import com.example.ecoleta_estabelecimento.features.coletas.components.CardColeta
 import com.example.ecoleta_estabelecimento.features.coletas.components.FiltroColetas
 import com.example.ecoleta_estabelecimento.features.coletas.model.Coleta
+import com.example.ecoleta_estabelecimento.features.residuos.components.MensagemListaVazia
 import com.example.ecoleta_estabelecimento.ui.theme.HomeTextoSecundario
-import com.example.ecoleta_estabelecimento.ui.theme.NovoResiduoErro
 import com.example.ecoleta_estabelecimento.ui.theme.VerdePrincipal
 import com.example.ecoleta_estabelecimento.ui.theme.nomeTela
 import com.example.ecoleta_estabelecimento.ui.theme.subTitulo
@@ -66,26 +71,45 @@ fun LazyListScope.ColetasScreen(
         Column(
             verticalArrangement = Arrangement.spacedBy(28.dp)
         ) {
-            // Filtro Todas / Pendentes / Aceitas
-            FiltroColetas(
-                filtroSelecionado = viewModel.filtroSelecionado,
-                onFiltroSelecionado = { novoFiltro ->
-                    viewModel.atualizarFiltro(novoFiltro)
-                }
-            )
+            // Mostra os filtros apenas quando os dados estão disponíveis
+            if ((viewModel.coletas.isNotEmpty() || !viewModel.carregandoColetas) && viewModel.erroCarregamentoColetas == null) {
+                // Filtro Todas / Pendentes / Aceitas
+                FiltroColetas(
+                    filtroSelecionado = viewModel.filtroSelecionado,
+                    onFiltroSelecionado = { novoFiltro ->
+                        viewModel.atualizarFiltro(novoFiltro)
+                    }
+                )
+            }
 
             // Carregamento inicial
             if (viewModel.carregandoColetas && viewModel.coletas.isEmpty()) {
-                CircularProgressIndicator(
-                    color = VerdePrincipal
-                )
-            } else if (viewModel.erroCarregamentoColetas != null && viewModel.coletas.isEmpty()) {
-                // Erro ao buscar as ofertas
-                Text(
-                    text = viewModel.erroCarregamentoColetas
-                        ?: "Não foi possível carregar as ofertas.",
-                    color = NovoResiduoErro,
-                    fontSize = 13.sp
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 30.dp),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    Text(
+                        text = "Carregando coletas",
+                        color = VerdePrincipal
+                    )
+
+                    Box(
+                        modifier = Modifier.padding(
+                            start = 3.dp,
+                            bottom = 5.dp
+                        )
+                    ) {
+                        CarregamentoEcoleta.Pontinhos()
+                    }
+                }
+            } else if (viewModel.erroCarregamentoColetas != null) {
+                // Mensagem de erro padronizada
+                MensagemListaVazia(
+                    titulo = "Não foi possível carregar as coletas",
+                    descricao = "Ocorreu um problema ao buscar suas coletas. Tente novamente."
                 )
             } else {
                 // Ofertas pendentes
@@ -105,15 +129,6 @@ fun LazyListScope.ColetasScreen(
                         subtitulo = "OFERTAS CONFIRMADAS",
                         coletas = viewModel.ofertasAceitas,
                         onVerMais = onVerMais
-                    )
-                }
-
-                // Exibe erro de atualização sem remover os cards que já estavam carregados
-                if (viewModel.erroCarregamentoColetas != null) {
-                    Text(
-                        text = viewModel.erroCarregamentoColetas ?: "",
-                        color = NovoResiduoErro,
-                        fontSize = 13.sp
                     )
                 }
             }
