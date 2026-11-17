@@ -1,6 +1,7 @@
 package com.example.ecoleta_estabelecimento
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -11,7 +12,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -19,8 +19,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -31,6 +31,7 @@ import com.example.ecoleta_estabelecimento.components.layout.LayoutPadrao
 import com.example.ecoleta_estabelecimento.components.navigation.BarraNavegacaoInferior
 import com.example.ecoleta_estabelecimento.features.coletas.ColetasViewModel
 import com.example.ecoleta_estabelecimento.features.home.HomeViewModel
+import com.example.ecoleta_estabelecimento.features.login.LoginScreen
 import com.example.ecoleta_estabelecimento.features.residuos.ResiduosViewModel
 import com.example.ecoleta_estabelecimento.features.routes.ColetasRoute
 import com.example.ecoleta_estabelecimento.features.routes.HomeRoute
@@ -176,8 +177,8 @@ private fun NavegacaoEcoleta(
 
         NavHost(
             navController = navController,
-            // Deve começar no login, quando estiver pronto
-            startDestination = Rotas.HOME,
+            // Inicia o aplicativo na tela de Login
+            startDestination = Rotas.LOGIN,
             modifier = Modifier.weight(1f),
 
             // Entrada da nova tela
@@ -232,11 +233,16 @@ private fun NavegacaoEcoleta(
                 )
             }
         ) {
-            // LOGIN - TEMPORÁRIO
+            // ======
+            // LOGIN
+            // ======
             composable(route = Rotas.LOGIN) {
-                LoginTemporario(
-                    onEntrarTeste = {
-                        // Acesso temporário para testar a navegação
+
+                val context = LocalContext.current
+
+                LoginScreen(
+                    onEntrar = { _, _ ->
+                        // TEMPORÁRIO:
                         navController.navigate(Rotas.HOME) {
                             popUpTo(Rotas.LOGIN) {
                                 inclusive = true
@@ -245,9 +251,17 @@ private fun NavegacaoEcoleta(
                             launchSingleTop = true
                         }
                     },
-
                     onCadastro = {
+                        // Abre a tela separada de cadastro
                         navController.navigate(Rotas.CADASTRO)
+                    },
+                    onEsqueceuSenha = {
+                        // Temporário até criar a recuperação
+                        Toast.makeText(
+                            context,
+                            "Recuperação de senha em desenvolvimento",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 )
             }
@@ -387,8 +401,8 @@ private fun NavHostController.navegarMenu(
     }
 
     navigate(rota) {
-        // Evita acumular várias cópias das telas
-        popUpTo(graph.findStartDestination().id)
+        // Mantém a Home como base da navegação interna
+        popUpTo(Rotas.HOME)
 
         launchSingleTop = true
     }
@@ -401,44 +415,13 @@ private fun NavHostController.navegarMenu(
 
 private fun NavHostController.sairParaLogin() {
     navigate(Rotas.LOGIN) {
-        // Remove todas as telas internas do histórico, incluindo o destino inicial
-        popUpTo(graph.findStartDestination().id) {
-            inclusive = true
+        // Remove todas as telas anteriores e mantém apenas o grafo de navegação
+        popUpTo(graph.id) {
+            inclusive = false
         }
 
         // Evita criar cópias desnecessárias do Login
         launchSingleTop = true
-    }
-}
-
-// =================
-// Login temporário
-// =================
-
-@Composable
-fun LoginTemporario(
-    onEntrarTeste: () -> Unit,
-    onCadastro: () -> Unit
-) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-
-        Text("Tela de Login (em construção)")
-
-        Button(
-            onClick = onEntrarTeste
-        ) {
-            Text("Ir para Home (teste)")
-        }
-
-        TextButton(
-            onClick = onCadastro
-        ) {
-            Text("Não possui conta? Cadastre-se")
-        }
     }
 }
 
