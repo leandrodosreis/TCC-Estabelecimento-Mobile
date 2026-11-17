@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.sp
 import com.example.ecoleta_estabelecimento.features.perfil.components.CardDadosEmpresa
 import com.example.ecoleta_estabelecimento.features.perfil.components.CardEndereco
 import com.example.ecoleta_estabelecimento.features.perfil.components.CardResumos
+import com.example.ecoleta_estabelecimento.features.perfil.components.CardSenha
 import com.example.ecoleta_estabelecimento.ui.theme.nomeTela
 import com.example.ecoleta_estabelecimento.ui.theme.subTitulo
 import com.example.ecoleta_estabelecimento.ui.theme.textoPainel
@@ -85,7 +86,12 @@ fun LazyListScope.PerfilScreen(
             bairro = "Pitanguinhas",
             cidade = "Madagascar",
             estado = "Acre",
-            cep = "06030102"
+            cep = "06030102",
+            numero = "146"
         )
     }
+
+    item { CardSenha(
+        senhaInicial  = "777666"
+    ) }
 }
