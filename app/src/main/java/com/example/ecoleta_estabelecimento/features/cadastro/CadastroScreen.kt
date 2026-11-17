@@ -12,7 +12,7 @@ import com.example.ecoleta_estabelecimento.features.cadastro.CadastroViewModel
 
 
 
-@Composable
+
 fun LazyListScope.CadastroScreen(
     viewModel: CadastroViewModel,
     onSair: ()-> Unit

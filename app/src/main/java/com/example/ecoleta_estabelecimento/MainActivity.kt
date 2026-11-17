@@ -33,6 +33,9 @@ import com.example.ecoleta_estabelecimento.features.residuos.components.DialogDe
 import com.example.ecoleta_estabelecimento.features.residuos.components.DialogNovoResiduo
 import com.example.ecoleta_estabelecimento.features.residuos.model.Residuo
 import kotlinx.coroutines.delay
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+
 
 class MainActivity : ComponentActivity() {
 
@@ -73,6 +76,43 @@ fun TelaInicial(
 
     // Obtém a ViewModel de Meus Resíduos
     val residuosViewModel: ResiduosViewModel = viewModel()
+
+
+    // Observa o resultado do cadastro
+    LaunchedEffect(cadastroViewModel.cadastroConcluido) {
+        if (cadastroViewModel.cadastroConcluido) {
+            telaAtual = "home"
+            cadastroViewModel.limparCadastroConcluido()
+            homeViewModel.buscarHome()
+        }
+    }
+
+    // Exibe o erro retornado pelo backend
+    val mensagemErroCadastro = cadastroViewModel.mensagemErro
+
+    if (mensagemErroCadastro != null) {
+        AlertDialog(
+            onDismissRequest = {
+                cadastroViewModel.limparMensagemErro()
+            },
+            title = {
+                Text("Não foi possível cadastrar")
+            },
+            text = {
+                Text(mensagemErroCadastro)
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        cadastroViewModel.limparMensagemErro()
+                    }
+                ) {
+                    Text("Entendi")
+                }
+            }
+        )
+    }
+
 
     // Guarda o resíduo selecionado para cancelamento
     var residuoParaCancelar by remember {
@@ -228,7 +268,7 @@ fun TelaInicial(
                 Text("Tela de Perfil")
             }
 
-            "cadastro" -> {
+            "cadastro" ->{
                 CadastroScreen(
                     viewModel = cadastroViewModel,
                     onSair = {

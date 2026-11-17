@@ -1,6 +1,7 @@
 package com.example.ecoleta_estabelecimento.features.cadastro.service
 
 import com.example.ecoleta_estabelecimento.features.cadastro.model.CadastrarUsuario
+import com.example.ecoleta_estabelecimento.features.cadastro.model.UsuarioCadastroResponse
 import com.example.ecoleta_estabelecimento.features.residuos.model.ResiduoCadastroRequest
 import com.example.ecoleta_estabelecimento.features.residuos.model.ResiduoCadastroResponse
 
@@ -13,5 +14,5 @@ interface CadastroService {
     @POST("cadastro/estabelecimento")
     suspend fun cadastrarEstabelecimento(
         @Body usuario: CadastrarUsuario
-    ): Response<ResiduoCadastroResponse>
+    ): Response<UsuarioCadastroResponse>
 }
