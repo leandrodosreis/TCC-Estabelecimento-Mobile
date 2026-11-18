@@ -3,6 +3,7 @@ package com.example.ecoleta_estabelecimento.features.login
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,7 +34,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -43,7 +47,6 @@ import com.example.ecoleta_estabelecimento.R
 import com.example.ecoleta_estabelecimento.features.login.components.CampoCnpjLogin
 import com.example.ecoleta_estabelecimento.features.login.components.CampoSenhaLogin
 import com.example.ecoleta_estabelecimento.ui.theme.Branco
-import com.example.ecoleta_estabelecimento.ui.theme.NovoResiduoErro
 import com.example.ecoleta_estabelecimento.ui.theme.VerdeEscuro
 import com.example.ecoleta_estabelecimento.ui.theme.VerdeFundo
 import com.example.ecoleta_estabelecimento.ui.theme.VerdePrincipal
@@ -64,16 +67,31 @@ fun LoginScreen(
         mutableStateOf("")
     }
 
-    var mensagemErro by remember {
+    var erroCnpj by remember {
         mutableStateOf<String?>(null)
     }
+
+    var erroSenha by remember {
+        mutableStateOf<String?>(null)
+    }
+
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(VerdeFundo)
             .imePadding()
-            .verticalScroll(rememberScrollState()),
+            .verticalScroll(rememberScrollState())
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onTap = {
+                        focusManager.clearFocus()
+                        keyboardController?.hide()
+                    }
+                )
+            },
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
@@ -163,9 +181,10 @@ fun LoginScreen(
                 cnpj = cnpj,
                 onCnpjChange = {
                     cnpj = it
-                    mensagemErro = null
+                    erroCnpj = null
                 },
-                enabled = !carregando
+                enabled = !carregando,
+                erro = erroCnpj
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -175,9 +194,10 @@ fun LoginScreen(
                 senha = senha,
                 onSenhaChange = {
                     senha = it
-                    mensagemErro = null
+                    erroSenha = null
                 },
-                enabled = !carregando
+                enabled = !carregando,
+                erro = erroSenha
             )
 
             // Esqueceu a senha
@@ -196,34 +216,25 @@ fun LoginScreen(
                 }
             }
 
-            // Mensagem de validação
-            if (mensagemErro != null) {
-                Text(
-                    text = mensagemErro.orEmpty(),
-                    color = NovoResiduoErro,
-                    fontSize = 13.sp,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-
             Spacer(modifier = Modifier.height(22.dp))
 
             // BOTÃO DE ENTRAR
             Button(
                 onClick = {
-                    when {
-                        cnpj.length != 14 -> {
-                            mensagemErro = "Informe um CNPJ com 14 caracteres."
-                        }
+                    erroCnpj = when {
+                        cnpj.isBlank() -> "Informe seu CNPJ."
+                        cnpj.length != 14 -> "Informe um CNPJ com 14 caracteres."
+                        else -> null
+                    }
 
-                        senha.isBlank() -> {
-                            mensagemErro = "Informe sua senha."
-                        }
+                    erroSenha = if (senha.isBlank()) {
+                        "Informe sua senha."
+                    } else {
+                        null
+                    }
 
-                        else -> {
-                            mensagemErro = null
-                            onEntrar(cnpj, senha)
-                        }
+                    if (erroCnpj == null && erroSenha == null) {
+                        onEntrar(cnpj, senha)
                     }
                 },
                 enabled = !carregando,
