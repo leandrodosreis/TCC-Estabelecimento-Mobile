@@ -356,19 +356,26 @@ class SessionManager(context: Context) {
      *
      * @Synchronized evita a execução simultânea desta função
      *  por threads que utilizem a mesma instância de SessionManager
+     *
+     * Retorna:
+     * true  -> sessão removida do armazenamento
+     * false -> não foi possível confirmar a remoção
      */
     @Synchronized
-    fun limparSessao() {
-        // Remove o token que o Retrofit consulta
-        TokenSessao.limparToken()
-
-        // Inicia uma edição no SharedPreferences
-        preferences.edit()
-            // Remove a entrada do token criptografado
+    fun limparSessao(): Boolean {
+        // Remove o JWT criptografado do SharedPreferences
+        val removido = preferences.edit()
             .remove(TOKEN_KEY)
-            // Grava a alteração de forma síncrona
-            // commit retorna um Boolean indicando se a gravação foi concluída com sucesso ou não
             .commit()
+
+        // Se a remoção foi concluída, apagamos também
+        // o token que o Retrofit consulta em memória.
+        if (removido) {
+            TokenSessao.limparToken()
+        }
+
+        // Informa ao chamador se foi possível concluir o encerramento da sessão
+        return removido
     }
 
     // =============================

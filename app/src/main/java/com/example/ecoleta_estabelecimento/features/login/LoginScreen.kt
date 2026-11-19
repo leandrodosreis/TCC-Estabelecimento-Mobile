@@ -57,7 +57,9 @@ fun LoginScreen(
     onEntrar: (String, String) -> Unit,
     onCadastro: () -> Unit,
     onEsqueceuSenha: () -> Unit,
-    carregando: Boolean = false
+    carregando: Boolean = false,
+    erroAutenticacao: String? = null,
+    onLimparErroAutenticacao: () -> Unit = {}
 ) {
     var cnpj by rememberSaveable {
         mutableStateOf("")
@@ -182,6 +184,7 @@ fun LoginScreen(
                 onCnpjChange = {
                     cnpj = it
                     erroCnpj = null
+                    onLimparErroAutenticacao()
                 },
                 enabled = !carregando,
                 erro = erroCnpj
@@ -195,9 +198,10 @@ fun LoginScreen(
                 onSenhaChange = {
                     senha = it
                     erroSenha = null
+                    onLimparErroAutenticacao()
                 },
                 enabled = !carregando,
-                erro = erroSenha
+                erro = erroSenha ?: erroAutenticacao
             )
 
             // Esqueceu a senha

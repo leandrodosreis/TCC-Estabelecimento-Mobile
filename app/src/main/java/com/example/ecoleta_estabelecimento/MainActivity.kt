@@ -7,16 +7,24 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -26,18 +34,24 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.ecoleta_estabelecimento.auth.SessionManager
 import com.example.ecoleta_estabelecimento.components.header.HeaderScreen
 import com.example.ecoleta_estabelecimento.components.layout.LayoutPadrao
 import com.example.ecoleta_estabelecimento.components.navigation.BarraNavegacaoInferior
 import com.example.ecoleta_estabelecimento.features.coletas.ColetasViewModel
 import com.example.ecoleta_estabelecimento.features.home.HomeViewModel
-import com.example.ecoleta_estabelecimento.features.login.LoginScreen
 import com.example.ecoleta_estabelecimento.features.residuos.ResiduosViewModel
 import com.example.ecoleta_estabelecimento.features.routes.ColetasRoute
 import com.example.ecoleta_estabelecimento.features.routes.HomeRoute
+import com.example.ecoleta_estabelecimento.features.routes.LoginRoute
 import com.example.ecoleta_estabelecimento.features.routes.ResiduosRoute
 import com.example.ecoleta_estabelecimento.ui.theme.Branco
 import com.example.ecoleta_estabelecimento.ui.theme.EcoletaEstabelecimentoTheme
+import com.example.ecoleta_estabelecimento.ui.theme.VerdeFundo
+import com.example.ecoleta_estabelecimento.ui.theme.VerdePrincipal
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
 
@@ -46,24 +60,82 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             EcoletaEstabelecimentoTheme {
-
-                // Controlador responsável pelas rotas do aplicativo
-                val navController = rememberNavController()
-
-                Scaffold(
-                    modifier = Modifier.fillMaxSize(),
-                    containerColor = Branco
-                ) { innerPadding ->
-                    // Gerencia todas as telas
-                    NavegacaoEcoleta(
-                        navController = navController,
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+                // Antes de montar a navegação, verifica se existe uma sessão válida
+                EntradaEcoleta()
             }
         }
     }
 }
+
+// Controla a inicialização do aplicativo
+// Antes de criar as telas e as ViewModels, verifica se existe um JWT salvo e ainda válido
+// Se existir, inicia na Home, caso contrário, inicia no Login
+@Composable
+private fun EntradaEcoleta() {
+    // Obtém o contexto do aplicativo
+    val context = LocalContext.current
+
+    // Guarda qual será a primeira rota,
+    // null significa que a sessão ainda está sendo verificada
+    var destinoInicial by remember {
+        mutableStateOf<String?>(null)
+    }
+
+    // Executado quando essa função entra na composição
+    LaunchedEffect(Unit) {
+        // Recupera o token fora da thread principal,
+        // pois o SessionManager utiliza criptografia e armazenamento local
+        val possuiSessaoValida = withContext(
+            Dispatchers.IO
+        ) {
+            val sessionManager = SessionManager(context)
+
+            // recuperarToken:
+            // - Recupera o JWT criptografado
+            // - Verifica a expiração
+            // - Coloca o JWT no TokenSessão
+            // - Retorna null se não houver sessão utilizável
+            sessionManager.recuperarToken() != null
+        }
+
+        // Define a tela inicial somente depois de terminar a verificação da sessão
+        destinoInicial = if (possuiSessaoValida) {
+            Rotas.HOME
+        } else {
+            Rotas.LOGIN
+        }
+    }
+
+    // Enquanto a tela inicial não é confirmada, é exibido apenas o carregamento
+    if (destinoInicial == null) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(VerdeFundo),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(
+                color = VerdePrincipal
+            )
+        }
+    } else {
+        // Só cria o NavController depois de verificar a sessão
+        val navController = rememberNavController()
+
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            containerColor = Branco
+        ) { innerPadding ->
+            // A navegação recebe a rota inicial escolhida pela verificação do JWT
+            NavegacaoEcoleta(
+                navController = navController,
+                destinoInicial = destinoInicial!!,
+                modifier = Modifier.padding(innerPadding)
+            )
+        }
+    }
+}
+
 
 // Rotas disponíveis no aplicativo
 private object Rotas {
@@ -112,11 +184,23 @@ private fun direcaoEntreTelas(
 @Composable
 private fun NavegacaoEcoleta(
     navController: NavHostController,
+    destinoInicial: String,
     modifier: Modifier = Modifier
 ) {
     // ===============================
     // ViewModels utilizadas nas telas
     // ===============================
+
+    // Context necessário para acessar o armazenamento do app
+    val context = LocalContext.current
+
+    // Escopo utilizado para executar o logout sem bloquear a interface do usuário
+    val scope = rememberCoroutineScope()
+
+    // Reutiliza a instância do SessionManager durante as recomposições desta função
+    val sessionManager = remember(context) {
+        SessionManager(context.applicationContext)
+    }
 
     val homeViewModel: HomeViewModel = viewModel()
     val residuosViewModel: ResiduosViewModel = viewModel()
@@ -124,6 +208,40 @@ private fun NavegacaoEcoleta(
 
     // Função utilizada ao clicar em Sair
     val onLogout: () -> Unit = {
+
+        // Executa o encerramento em uma coroutine
+        scope.launch {
+            // A remoção do JWT utiliza armazenamento local, por isso é executada fora da thread principal
+            val sessaoRemovida = try {
+                withContext(Dispatchers.IO) {
+                    sessionManager.limparSessao()
+                }
+            } catch (e: Exception) {
+                // Se ocorrer uma falha inesperada, não confirmamos o logout
+                false
+            }
+
+            if (sessaoRemovida) {
+                // Limpa os estados auxiliares dos resíduos
+                residuosViewModel.limparEstadoCancelamentoResiduo()
+                residuosViewModel.limparDetalhesColeta()
+
+                // Limpa os estados auxiliares das coletas
+                coletasViewModel.limparDetalhesOferta()
+                coletasViewModel.limparEstadoAceitarOferta()
+                coletasViewModel.limparEstadoRecusarOferta()
+
+                // Após limpar o JWT, navega para o Login
+                navController.sairParaLogin()
+            } else {
+                // Se a remoção falhar, é informado ao usuário
+                Toast.makeText(
+                    context,
+                    "Não foi possível encerrar a sessão. Tente novamente.",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
 
         // Limpa os estados auxiliares dos diálogos
         residuosViewModel.limparEstadoCancelamentoResiduo()
@@ -177,8 +295,9 @@ private fun NavegacaoEcoleta(
 
         NavHost(
             navController = navController,
-            // Inicia o aplicativo na tela de Login
-            startDestination = Rotas.LOGIN,
+            // Recebe a rota definida pela EntradaEcoleta:
+            // HOME para sessão válida ou LOGIN para sessão ausente/expirada
+            startDestination = destinoInicial,
             modifier = Modifier.weight(1f),
 
             // Entrada da nova tela
@@ -237,31 +356,22 @@ private fun NavegacaoEcoleta(
             // LOGIN
             // ======
             composable(route = Rotas.LOGIN) {
-
-                val context = LocalContext.current
-
-                LoginScreen(
-                    onEntrar = { _, _ ->
-                        // TEMPORÁRIO:
+                LoginRoute(
+                    navController = navController,
+                    // Navega para a tela separada de cadastro
+                    onCadastro = {
+                        navController.navigate(Rotas.CADASTRO)
+                    },
+                    // Executado somente depois que o backend autenticar e o JWT for salvo com sucesso
+                    onLoginSucesso = {
                         navController.navigate(Rotas.HOME) {
+                            // Remove o Login do histórico de navegação
                             popUpTo(Rotas.LOGIN) {
                                 inclusive = true
                             }
-
+                            // Evita criar uma Home duplicada
                             launchSingleTop = true
                         }
-                    },
-                    onCadastro = {
-                        // Abre a tela separada de cadastro
-                        navController.navigate(Rotas.CADASTRO)
-                    },
-                    onEsqueceuSenha = {
-                        // Temporário até criar a recuperação
-                        Toast.makeText(
-                            context,
-                            "Recuperação de senha em desenvolvimento",
-                            Toast.LENGTH_SHORT
-                        ).show()
                     }
                 )
             }
