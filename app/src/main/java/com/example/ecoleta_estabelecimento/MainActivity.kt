@@ -19,6 +19,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,6 +29,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -35,6 +39,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.ecoleta_estabelecimento.auth.SessionManager
+import com.example.ecoleta_estabelecimento.auth.TokenSessao
 import com.example.ecoleta_estabelecimento.components.header.HeaderScreen
 import com.example.ecoleta_estabelecimento.components.layout.LayoutPadrao
 import com.example.ecoleta_estabelecimento.components.navigation.BarraNavegacaoInferior
@@ -50,6 +55,7 @@ import com.example.ecoleta_estabelecimento.ui.theme.EcoletaEstabelecimentoTheme
 import com.example.ecoleta_estabelecimento.ui.theme.VerdeFundo
 import com.example.ecoleta_estabelecimento.ui.theme.VerdePrincipal
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -242,17 +248,6 @@ private fun NavegacaoEcoleta(
                 ).show()
             }
         }
-
-        // Limpa os estados auxiliares dos diálogos
-        residuosViewModel.limparEstadoCancelamentoResiduo()
-        residuosViewModel.limparDetalhesColeta()
-
-        coletasViewModel.limparDetalhesOferta()
-        coletasViewModel.limparEstadoAceitarOferta()
-        coletasViewModel.limparEstadoRecusarOferta()
-
-        // Envia o usuário para Login
-        navController.sairParaLogin()
     }
 
     // NAVHOST - NAVEGAÇÃO PRINCIPAL
@@ -261,6 +256,103 @@ private fun NavegacaoEcoleta(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
 
     val rotaAtual = navBackStackEntry?.destination?.route
+
+    // =====================================
+    // Monitoramento da expiração da sessão
+    // =====================================
+
+    // Obtém o ciclo de vida da Activity
+    // Será utilizado para detectar quando o app voltar ao primeiro plano (quando não estiver aberto em segundo plano)
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    // Contador atualizado sempre que a Activity recebe o evento ON_RESUME
+    // Quando ele mudar, o LaunchedEffect abaixo executará uma nova verificação do JWT
+    var verificacoesRetorno by remember {
+        mutableStateOf(0)
+    }
+
+    // Observa o ciclo de vida enquanto esta função estiver presente na composição
+    DisposableEffect(lifecycleOwner) {
+        // Cria um observador dos eventos da Activity
+        val observador = LifecycleEventObserver { _, evento ->
+            // ON_RESUME acontece quando a Activity retorna ao estado de interação
+            if (evento == Lifecycle.Event.ON_RESUME) {
+                verificacoesRetorno++
+            }
+        }
+
+        // Registra o observador no ciclo de vida
+        lifecycleOwner.lifecycle.addObserver(observador)
+
+        // Remove o observador quando a composição deixar de utilizá-lo
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observador)
+        }
+    }
+
+    // Executa o monitoramento quando:
+    // - A rota atual muda
+    // - O aplicativo retorna ao primeiro plano
+    // LaunchedEffect cancela a execução anterior quando uma dessas chaves muda
+    LaunchedEffect(rotaAtual, verificacoesRetorno) {
+        // Verifica somente nas telas autenticadas
+        // Login e Cadastro não exigem sessão
+
+        val telaAutenticada = rotaAtual in listOf(
+            Rotas.HOME,
+            Rotas.RESIDUOS,
+            Rotas.COLETAS,
+            Rotas.HISTORICO,
+            Rotas.PERFIL
+        )
+
+        if (!telaAutenticada) {
+            return@LaunchedEffect
+        }
+
+        // Obtém o JWT em memória
+        val token = TokenSessao.getToken()
+
+        // Se uma tela autenticada estiver aberta sem JWT, encerra a sessão para não deixar a tela desprotegida
+        if (token == null) {
+            onLogout()
+            return@LaunchedEffect
+        }
+
+        // Cria um SessionManager para consultar a expiração informada pelo backend
+        val sessionManager = SessionManager(
+            context.applicationContext
+        )
+
+        // Obtém o campo "exp", em segundos Unix
+        val expiracao = sessionManager.obterExpiracao(token)
+
+        // Obtém o instante atual, também em segundos Unix
+        val agora = System.currentTimeMillis() / 1000L
+
+        // Se o token estiver malformado ou expirado, encerra a sessão imediatamente
+        if (expiracao == null || expiracao <= agora) {
+            onLogout()
+            return@LaunchedEffect
+        }
+
+        // Converte a expiração para milissegundos e calcula o tempo restante da sessão
+        val tempoRestante = (expiracao * 1000L) - System.currentTimeMillis()
+
+        // Suspende a coroutine até o instante esperado de expiração do JWT
+        // delay não bloqueia a interface
+        if (tempoRestante > 0L) {
+            delay(tempoRestante)
+        }
+
+        // Antes de encerrar, confirma que o monitoramento continue com o mesmo JWT
+        // Também verifica novamente a expiração
+        // Isso evita encerrar uma sessão nova por causa de um temporizador antigo
+        if (TokenSessao.getToken() == token && !sessionManager.tokenEstaValido(token)) {
+            onLogout()
+        }
+    }
+
 
     // Header e barra inferior aparecem somente nas telas internas
     val mostrarNavegacao = rotaAtual in listOf(
