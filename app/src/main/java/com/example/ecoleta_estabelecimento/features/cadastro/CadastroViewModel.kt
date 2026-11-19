@@ -26,6 +26,8 @@ class CadastroViewModel : ViewModel() {
     var bairro by mutableStateOf("")
     var cidade by mutableStateOf("")
     var estado by mutableStateOf("")
+
+    var nomeEstado by mutableStateOf("")
     var numero by mutableStateOf("")
     var email by mutableStateOf("")
     var telefone by mutableStateOf("")
@@ -71,6 +73,7 @@ class CadastroViewModel : ViewModel() {
                     bairro = dados.bairro.orEmpty()
                     cidade = dados.cidade.orEmpty()
                     estado = dados.uf.orEmpty()
+                    nomeEstado = converterSigla(estado)
                 } else {
                     limparEndereco()
                     mensagemErro = "CEP não encontrado. Verifique o número informado."
@@ -87,16 +90,56 @@ class CadastroViewModel : ViewModel() {
         }
     }
 
+    private fun converterSigla(sigla: String): String {
+        return when (sigla.uppercase()) {
+            "AC" -> "Acre"
+            "AL" -> "Alagoas"
+            "AP" -> "Amapá"
+            "AM" -> "Amazonas"
+            "BA" -> "Bahia"
+            "CE" -> "Ceará"
+            "DF" -> "Distrito Federal"
+            "ES" -> "Espírito Santo"
+            "GO" -> "Goiás"
+            "MA" -> "Maranhão"
+            "MT" -> "Mato Grosso"
+            "MS" -> "Mato Grosso do Sul"
+            "MG" -> "Minas Gerais"
+            "PA" -> "Pará"
+            "PB" -> "Paraíba"
+            "PR" -> "Paraná"
+            "PE" -> "Pernambuco"
+            "PI" -> "Piauí"
+            "RJ" -> "Rio de Janeiro"
+            "RN" -> "Rio Grande do Norte"
+            "RS" -> "Rio Grande do Sul"
+            "RO" -> "Rondônia"
+            "RR" -> "Roraima"
+            "SC" -> "Santa Catarina"
+            "SP" -> "São Paulo"
+            "SE" -> "Sergipe"
+            "TO" -> "Tocantins"
+            else -> ""
+        }
+    }
+
     private fun limparEndereco() {
         logradouro = ""
         bairro = ""
         cidade = ""
         estado = ""
+        nomeEstado = ""
     }
+
+
+    private fun cnpjLimpo() = cnpj.uppercase().filter { it in 'A'..'Z' || it in '0'..'9' }
 
     private fun validar(): String? = when {
         nomeEmpresa.isBlank() ->
             "Informe o nome da empresa"
+
+        cnpjLimpo().length != 14 -> "CNPJ deve ter 14 caracteres"
+
 
         nomeEmpresa.trim().length < 3 ->
             "O nome da empresa deve ter pelo menos 3 caracteres"
@@ -108,7 +151,7 @@ class CadastroViewModel : ViewModel() {
             "CEP deve ter 8 dígitos"
 
         logradouro.isBlank() || bairro.isBlank() ||
-                cidade.isBlank() || estado.isBlank() ->
+                cidade.isBlank() || estado.isBlank() || nomeEstado.isBlank() ->
             "Preencha o endereço completo com um CEP válido"
 
         numero.isBlank() ->
@@ -147,23 +190,32 @@ class CadastroViewModel : ViewModel() {
             try {
                 val request = CadastrarUsuario(
                     nomeEmpresa = nomeEmpresa.trim(),
-                    cnpj = cnpj.filter { it.isDigit() },
+                    cnpj = cnpjLimpo(),
                     cep = cep.filter { it.isDigit() },
                     logradouro = logradouro.trim(),
                     bairro = bairro.trim(),
                     cidade = cidade.trim(),
+                    nomeEstado = nomeEstado.trim(),
                     estado = estado.trim(),
-                    numero = numero.trim(),
+                    numero = numero.toInt(),
                     email = email.trim(),
                     telefone = telefone.filter { it.isDigit() },
-                    senha = senha
+                    senha = senha,
+                    confirmarSenha = confirmarSenha
                 )
 
                 val servico = RetrofitFactory.criarServico(
                     CadastroService::class.java
                 )
 
+                val jsonEnviado = Gson().toJson(request)
+                android.util.Log.d("CADASTRO_DEBUG", "Json enviado: $jsonEnviado")
+
                 val resposta = servico.cadastrarEstabelecimento(request)
+
+                android.util.Log.d("CADASTRO_DEBUG", "Código HTTP: ${resposta.code()}")
+                android.util.Log.d("CADASTRO_DEBUG", "Resposta: ${resposta.body()}")
+                android.util.Log.d("CADASTRO_DEBUG", "Erro: ${resposta.errorBody()?.string()}")
 
                 val corpo = resposta.body()
 

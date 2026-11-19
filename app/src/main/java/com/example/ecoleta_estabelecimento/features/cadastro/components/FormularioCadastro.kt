@@ -53,7 +53,8 @@ import kotlin.coroutines.cancellation.CancellationException
 fun CampoDeCadastro(
     viewModel: CadastroViewModel,
     onSair: () -> Unit,
-    modifier: Modifier = Modifier) {
+    modifier: Modifier = Modifier
+) {
 
     var nomeEmpresa by remember { mutableStateOf("") }
     var cnpj by remember { mutableStateOf("") }
@@ -90,53 +91,6 @@ fun CampoDeCadastro(
     var mostrarErroCadastro by remember { mutableStateOf(false) }
     var mensagemErroCadastro by remember { mutableStateOf("") }
 
-    LaunchedEffect(viewModel.cep) {
-
-        val cepDigitado = viewModel.cep
-
-        if (cepDigitado.length == 8) {
-
-            // Pequeno intervalo para evitar consultas a cada alteração rápida
-            delay(400)
-
-            erroCep = null
-
-            try {
-                val resposta = ViaCepClient.service.buscarCep(cepDigitado)
-
-                if (resposta.isSuccessful) {
-
-                    val endereco = resposta.body()
-
-                    if (endereco != null && endereco.erro != true) {
-
-                        // Preenche os campos automaticamente
-                        viewModel.logradouro = endereco.logradouro.orEmpty()
-                        viewModel.bairro = endereco.bairro.orEmpty()
-                        viewModel.cidade = endereco.cidade.orEmpty()
-                        viewModel.estado = endereco.uf.orEmpty()
-
-                    } else {
-                        erroCep = "CEP não encontrado"
-
-                        logradouro = ""
-                        bairro = ""
-                        cidade = ""
-                        estado = ""
-                    }
-
-                } else {
-                    erroCep = "Não foi possível consultar o CEP"
-                }
-
-            } catch (e: CancellationException) {
-                throw e
-
-            } catch (e: Exception) {
-                erroCep = "Erro ao consultar o CEP. Verifique sua conexão."
-            }
-        }
-    }
 
 
 
@@ -176,7 +130,7 @@ fun CampoDeCadastro(
 
                 Text(
                     text = "Disponibilize os resíduos para melhorar o meio ambiente, através da Ecoleta",
-                    modifier = Modifier. padding(top = 20.dp, start = 30.dp, end = 10.dp)
+                    modifier = Modifier.padding(top = 20.dp, start = 30.dp, end = 10.dp)
                 )
 
             }
@@ -202,7 +156,7 @@ fun CampoDeCadastro(
         }
 
         // CNPJ e CEP
-        Row (Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Column(Modifier.weight(1f)) {
                 Text(
                     text = "CNPJ",
@@ -212,14 +166,14 @@ fun CampoDeCadastro(
                 CampoTexto(
                     value = viewModel.cnpj,
                     onValueChange = {
-                        viewModel.cnpj = it.filter { caractere ->
-                            caractere.isDigit()
-                        }.take(14)
+                        viewModel.cnpj = it.uppercase()
+                            .filter { c -> c in 'A'..'Z' || c in '0'..'9' }
+                            .take(14)
                         erroCnpj = null
                     },
                     erro = erroCnpj,
                     keyboardType = KeyboardType.Number,
-                    visualTransformation = Mascara("##.###.###/####-##")
+                    visualTransformation = MascaraCnpj()
                 )
             }
             Column(Modifier.weight(1f)) {
@@ -231,20 +185,13 @@ fun CampoDeCadastro(
                 CampoTexto(
                     value = viewModel.cep,
                     onValueChange = {
-                        viewModel.cep = it.filter { caractere ->
-                            caractere.isDigit()
-                        }.take(8)
+                        viewModel.onCepChange(it)
                         erroCep = null
-
-                        logradouro=""
-                        bairro=""
-                        cidade=""
-                        estado=""
 
                     },
                     erro = erroCep,
                     keyboardType = KeyboardType.Number,
-                    visualTransformation = Mascara("#####-###")
+                    visualTransformation = MascaraCep()
                 )
             }
         }
@@ -259,8 +206,10 @@ fun CampoDeCadastro(
             CampoTexto(
                 value = viewModel.logradouro,
                 onValueChange = {
-                    if (it.length <= limiteMaximo) logradouro = it
-                    erroLogradouro = null
+                    if (it.length <= limiteMaximo) {
+                       viewModel.logradouro = it
+                        erroLogradouro = null
+                    }
                 },
                 erro = erroLogradouro
             )
@@ -276,7 +225,7 @@ fun CampoDeCadastro(
                 )
                 CampoTexto(
                     value = viewModel.bairro,
-                    onValueChange = { if (it.length <= limiteMaximo) bairro = it },
+                    onValueChange = { },
                     readOnly = true
                 )
             }
@@ -288,7 +237,7 @@ fun CampoDeCadastro(
                 )
                 CampoTexto(
                     value = viewModel.cidade,
-                    onValueChange = { if (it.length <= limiteMaximo) cidade = it },
+                    onValueChange = { },
                     readOnly = true
                 )
             }
@@ -303,8 +252,8 @@ fun CampoDeCadastro(
                     fontSize = 14.sp
                 )
                 CampoTexto(
-                    value = viewModel.estado,
-                    onValueChange = { if (it.length <= limiteMaximo) estado = it },
+                    value = viewModel.nomeEstado,
+                    onValueChange = {},
                     readOnly = true
                 )
             }
@@ -315,11 +264,15 @@ fun CampoDeCadastro(
                     fontSize = 14.sp
                 )
                 CampoTexto(
-                    value = numero,
-                    onValueChange = { if (it.length <= limiteMaximoEmail) numero = it
-                                    erronumero=null},
+                    value = viewModel.numero,
+                    onValueChange = {
+                        if (it.length <= limiteMaximo){
+                            viewModel.numero = it
+                            erronumero = null
+                        }
+                    },
                     keyboardType = KeyboardType.Number,
-                    erro=erronumero
+                    erro = erronumero
                 )
             }
         }
@@ -337,7 +290,7 @@ fun CampoDeCadastro(
                     onValueChange = {
                         if (it.length <= limiteMaximoEmail) {
                             viewModel.email = it
-                            erroEmail=null
+                            erroEmail = null
                         }
 
                     },
@@ -352,10 +305,13 @@ fun CampoDeCadastro(
                     fontSize = 14.sp
                 )
                 CampoTexto(
-                    value = telefone,
-                    onValueChange = { if (it.length <= limiteMaximoTelefone) telefone = it
-                                    erroTelefone=null},
+                    value = viewModel.telefone,
+                    onValueChange = {
+                        viewModel.telefone = it.filter { c -> c.isDigit() }.take(11)
+                        erroTelefone = null
+                    },
                     keyboardType = KeyboardType.Phone,
+                    visualTransformation = MascaraTelefone(),
                     erro = erroTelefone
                 )
             }
@@ -374,7 +330,7 @@ fun CampoDeCadastro(
                     onValueChange = {
                         if (it.length <= limiteMaximo) {
                             viewModel.senha = it
-                            erroSenha=null
+                            erroSenha = null
                         }
                     },
                     erro = erroSenha,
@@ -389,11 +345,14 @@ fun CampoDeCadastro(
                     fontSize = 14.sp
                 )
                 CampoTexto(
-                    value = confirmarSenha,
-                    onValueChange = { if (it.length <= limiteMaximo) confirmarSenha = it
-                                    erroConfirmarsenha=null
-                                    },
-                    erro=erroConfirmarsenha,
+                    value = viewModel.confirmarSenha,
+                    onValueChange = {
+                        if (it.length <= limiteMaximo) {
+                            viewModel.confirmarSenha = it
+                            erroConfirmarsenha = null
+                        }
+                    },
+                    erro = erroConfirmarsenha,
                     keyboardType = KeyboardType.Password,
                     senha = true
                 )
@@ -407,9 +366,11 @@ fun CampoDeCadastro(
                 .padding(top = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Button (
+            Button(
                 onClick = onSair,
-                modifier = Modifier.weight(2f).height(50.dp),
+                modifier = Modifier
+                    .weight(2f)
+                    .height(50.dp),
                 shape = RoundedCornerShape(15.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.White,
@@ -424,24 +385,30 @@ fun CampoDeCadastro(
                     erroNome = when {
                         viewModel.nomeEmpresa.isBlank() ->
                             "Informe o nome da empresa"
+
                         viewModel.nomeEmpresa.length < 3 ->
                             "O nome deve ter pelo menos 3 caracteres"
+
                         else -> null
                     }
 
                     erroCnpj = when {
                         viewModel.cnpj.isBlank() ->
                             "Informe o CNPJ"
+
                         viewModel.cnpj.length != 14 ->
                             "O CNPJ deve ter 14 números"
+
                         else -> null
                     }
 
                     erroCep = when {
                         viewModel.cep.isBlank() ->
                             "Informe o CEP"
+
                         viewModel.cep.length != 8 ->
                             "O CEP deve ter 8 números"
+
                         else -> null
                     }
 
@@ -449,40 +416,48 @@ fun CampoDeCadastro(
                         "Informe o logradouro"
                     } else null
 
-                    erronumero = if (numero.isBlank()) {
+                    erronumero = if (viewModel.numero.isBlank()) {
                         "Informe o número"
                     } else null
 
                     erroEmail = when {
                         viewModel.email.isBlank() ->
                             "Informe o e-mail"
+
                         !android.util.Patterns.EMAIL_ADDRESS
                             .matcher(viewModel.email).matches() ->
                             "E-mail inválido"
+
                         else -> null
                     }
 
                     erroTelefone = when {
                         viewModel.telefone.isBlank() ->
                             "Informe o telefone"
-                        viewModel.telefone.filter { it.isDigit() }.length < 10 ->
+
+                        viewModel.telefone.length !in 10..11 ->
                             "Telefone inválido"
+
                         else -> null
                     }
 
                     erroSenha = when {
                         viewModel.senha.isBlank() ->
                             "Informe a senha"
+
                         viewModel.senha.length < 8 ->
                             "A senha deve ter pelo menos 8 caracteres"
+
                         else -> null
                     }
 
                     erroConfirmarsenha = when {
-                        confirmarSenha.isBlank() ->
+                        viewModel.confirmarSenha.isBlank() ->
                             "Confirme sua senha"
-                        confirmarSenha != viewModel.senha ->
+
+                        viewModel.confirmarSenha != viewModel.senha ->
                             "As senhas não coincidem"
+
                         else -> null
                     }
 
@@ -499,7 +474,8 @@ fun CampoDeCadastro(
                     )
 
                     if (erros.any { it != null }) {
-                        mensagemErroCadastro = "Verifique os campos destacados e corrija as informações."
+                        mensagemErroCadastro =
+                            "Verifique os campos destacados e corrija as informações."
                         mostrarErroCadastro = true
                     } else {
                         viewModel.cadastrar()
@@ -530,7 +506,6 @@ fun CampoDeCadastro(
 
     }
 }
-
 
 
 class Mascara(private val mascara: String) : VisualTransformation {
@@ -639,12 +614,13 @@ fun CampoTexto(
             }
         )
 
-        if (erro != null){
-            Text(text = erro,
+        if (erro != null) {
+            Text(
+                text = erro,
                 color = Color.Red,
                 fontSize = 11.sp,
                 modifier = Modifier.padding(start = 4.dp, top = 3.dp)
-                )
+            )
         }
 
     }
