@@ -187,7 +187,8 @@ fun LoginScreen(
                     onLimparErroAutenticacao()
                 },
                 enabled = !carregando,
-                erro = erroCnpj
+                erro = erroCnpj,
+                erroAutenticacao = erroAutenticacao != null
             )
 
             Spacer(modifier = Modifier.height(16.dp))

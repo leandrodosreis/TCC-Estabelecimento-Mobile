@@ -28,7 +28,8 @@ fun CampoCnpjLogin(
     cnpj: String,
     onCnpjChange: (String) -> Unit,
     enabled: Boolean = true,
-    erro: String? = null
+    erro: String? = null,
+    erroAutenticacao: Boolean = false
 ) {
     Column(
         modifier = Modifier.fillMaxWidth()
@@ -54,7 +55,7 @@ fun CampoCnpjLogin(
                 )
             },
             singleLine = true,
-            isError = erro != null,
+            isError = erro != null || erroAutenticacao,
             shape = RoundedCornerShape(12.dp),
             visualTransformation = MascaraCnpj(),
             keyboardOptions = KeyboardOptions(
@@ -70,6 +71,7 @@ fun CampoCnpjLogin(
                 unfocusedBorderColor = LoginBordaCampo,
                 focusedContainerColor = Branco,
                 unfocusedContainerColor = Branco,
+                errorContainerColor = Branco,
                 errorBorderColor = NovoResiduoErro,
                 cursorColor = VerdePrincipal
             )

@@ -103,6 +103,7 @@ fun CampoSenhaLogin(
                 unfocusedBorderColor = LoginBordaCampo,
                 focusedContainerColor = Branco,
                 unfocusedContainerColor = Branco,
+                errorContainerColor = Branco,
                 errorBorderColor = NovoResiduoErro,
                 cursorColor = VerdePrincipal
             )
