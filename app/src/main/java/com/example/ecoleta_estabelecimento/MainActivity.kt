@@ -34,10 +34,12 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.ecoleta_estabelecimento.auth.SessionManager
 import com.example.ecoleta_estabelecimento.auth.TokenSessao
 import com.example.ecoleta_estabelecimento.components.header.HeaderScreen
@@ -304,7 +306,7 @@ private fun NavegacaoEcoleta(
             Rotas.COLETAS,
             Rotas.HISTORICO,
             Rotas.PERFIL
-        )
+        ) || rotaAtual == "${Rotas.COLETAS}/oferta/{idOferta}"
 
         if (!telaAutenticada) {
             return@LaunchedEffect
@@ -361,7 +363,7 @@ private fun NavegacaoEcoleta(
         Rotas.RESIDUOS,
         Rotas.HISTORICO,
         Rotas.PERFIL
-    )
+    ) || rotaAtual == "${Rotas.COLETAS}/oferta/{idOferta}"
 
     // ESTRUTURA PRINCIPAL DO APLICATIVO
 
@@ -371,7 +373,13 @@ private fun NavegacaoEcoleta(
         // HEADER FIXO
         if (mostrarNavegacao) {
             HeaderScreen(
-                rotaAtual = rotaAtual ?: Rotas.HOME,
+                rotaAtual = if (
+                    rotaAtual == "${Rotas.COLETAS}/oferta/{idOferta}"
+                ) {
+                    Rotas.COLETAS
+                } else {
+                    rotaAtual ?: Rotas.HOME
+                },
 
                 // Clique na logo para voltar à Home
                 onNavigate = { rota ->
@@ -484,6 +492,7 @@ private fun NavegacaoEcoleta(
             composable(route = Rotas.HOME) {
                 HomeRoute(
                     viewModel = homeViewModel,
+                    residuosViewModel = residuosViewModel,
                     onNavigate = { rota ->
                         navController.navegarMenu(rota)
                     },
@@ -518,6 +527,43 @@ private fun NavegacaoEcoleta(
                         navController.navegarMenu(rota)
                     },
                     onLogout = onLogout
+                )
+            }
+
+            // ==========================================
+            // COLETAS - OFERTA SELECIONADA NA HOME
+            // ==========================================
+            composable(
+                // Recebe o ID da oferta enviado pela Home
+                route = "${Rotas.COLETAS}/oferta/{idOferta}",
+
+                // Define o ID como número inteiro
+                arguments = listOf(
+                    navArgument("idOferta") {
+                        type = NavType.IntType
+                    }
+                )
+            ) { backStackEntry ->
+
+                // Recupera o ID da oferta selecionada
+                val idOferta = backStackEntry.arguments
+                    ?.getInt("idOferta")
+
+                // Reutiliza a ColetasRoute existente
+                ColetasRoute(
+                    navController = navController,
+                    viewModel = coletasViewModel,
+
+                    // Mantém o funcionamento do menu
+                    onNavigate = { rota ->
+                        navController.navegarMenu(rota)
+                    },
+
+                    // Mantém o logout já implementado
+                    onLogout = onLogout,
+
+                    // Informa qual oferta deve abrir o popup
+                    idOfertaParaAbrir = idOferta
                 )
             }
 
@@ -557,7 +603,13 @@ private fun NavegacaoEcoleta(
         // BARRA INFERIOR FIXA
         if (mostrarNavegacao) {
             BarraNavegacaoInferior(
-                rotaAtual = rotaAtual ?: Rotas.HOME,
+                rotaAtual = if (
+                    rotaAtual == "${Rotas.COLETAS}/oferta/{idOferta}"
+                ) {
+                    Rotas.COLETAS
+                } else {
+                    rotaAtual ?: Rotas.HOME
+                },
 
                 onNavigate = { rota ->
                     navController.navegarMenu(rota)

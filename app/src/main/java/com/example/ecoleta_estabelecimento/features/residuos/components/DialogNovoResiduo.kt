@@ -23,6 +23,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -375,8 +376,16 @@ fun DialogNovoResiduo(
                         },
                         trailingIcon = {
                             Icon(
-                                imageVector = Icons.Default.KeyboardArrowDown,
-                                contentDescription = "Selecionar material",
+                                imageVector = if (menuMaterialExpandido) {
+                                    Icons.Default.KeyboardArrowUp
+                                } else {
+                                    Icons.Default.KeyboardArrowDown
+                                },
+                                contentDescription = if (menuMaterialExpandido) {
+                                    "Fechar lista de materiais"
+                                } else {
+                                    "Abrir lista de materiais"
+                                },
                                 tint = NovoResiduoTexto
                             )
                         },

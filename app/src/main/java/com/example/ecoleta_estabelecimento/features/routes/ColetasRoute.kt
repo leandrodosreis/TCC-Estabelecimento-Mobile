@@ -28,7 +28,10 @@ fun ColetasRoute(
     navController: NavHostController,
     viewModel: ColetasViewModel,
     onNavigate: (String) -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    // ID opcional de uma oferta selecionada na Home
+    // Quando for null, abre Coletas normalmente
+    idOfertaParaAbrir: Int? = null
 ) {
 
     // Atualiza as ofertas sempre que entrar na tela de Coletas
@@ -49,6 +52,26 @@ fun ColetasRoute(
     // Oferta cujos detalhes estão abertos
     var idOfertaDetalhesAberto by remember {
         mutableStateOf<Int?>(null)
+    }
+
+    // ==================================
+    // Abertura automática vindo da home
+    // ==================================
+    LaunchedEffect(idOfertaParaAbrir) {
+
+        // Se não recebeu um ID, não abre nenhum popup
+        if (idOfertaParaAbrir != null) {
+
+            // Limpa possíveis estados anteriores
+            viewModel.limparEstadoAceitarOferta()
+            viewModel.limparEstadoRecusarOferta()
+
+            // Define qual oferta terá os detalhes exibidos
+            idOfertaDetalhesAberto = idOfertaParaAbrir
+
+            // Utiliza a mesma função da ViewModel que já é chamada pelo Ver mais de Coletas
+            viewModel.buscarDetalhesColeta(idOfertaParaAbrir)
+        }
     }
 
     // Oferta aguardando confirmação
