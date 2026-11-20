@@ -1,25 +1,31 @@
 package com.example.ecoleta_estabelecimento.features.home
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ecoleta_estabelecimento.R
+import com.example.ecoleta_estabelecimento.components.loading.CarregamentoEcoleta
 import com.example.ecoleta_estabelecimento.features.home.components.CardBoasVindas
 import com.example.ecoleta_estabelecimento.features.home.components.CardProximoPasso
 import com.example.ecoleta_estabelecimento.features.home.components.CardResumo
 import com.example.ecoleta_estabelecimento.features.home.components.SecaoOfertasRecebidas
 import com.example.ecoleta_estabelecimento.features.home.model.HomeResumo
 import com.example.ecoleta_estabelecimento.features.home.model.OfertaResumo
+import com.example.ecoleta_estabelecimento.features.residuos.components.MensagemListaVazia
 import com.example.ecoleta_estabelecimento.ui.theme.HomeCardVerdeClaro
+import com.example.ecoleta_estabelecimento.ui.theme.VerdePrincipal
 import com.example.ecoleta_estabelecimento.ui.theme.nomeTela
 import com.example.ecoleta_estabelecimento.ui.theme.subTitulo
 import com.example.ecoleta_estabelecimento.ui.theme.textoPainel
@@ -27,6 +33,8 @@ import com.example.ecoleta_estabelecimento.ui.theme.textoPainel
 fun LazyListScope.HomeScreen(
     resumo: HomeResumo?,
     ofertas: List<OfertaResumo>,
+    carregando: Boolean = false,
+    erro: String? = null,
     onCadastrarResiduo: () -> Unit = {},
     onVerTodasOfertas: () -> Unit = {},
     onVerOferta: (Int) -> Unit = {}
@@ -68,6 +76,45 @@ fun LazyListScope.HomeScreen(
         }
     }
 
+    // Carregamento inicial
+    if (carregando && resumo == null) {
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 30.dp),
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Text(
+                    text = "Carregando dados",
+                    color = VerdePrincipal
+                )
+
+                Box(
+                    modifier = Modifier.padding(
+                        start = 3.dp,
+                        bottom = 5.dp
+                    )
+                ) {
+                    CarregamentoEcoleta.Pontinhos()
+                }
+            }
+        }
+        return
+    }
+
+    // Erro ao carregar a Home
+    if (erro != null) {
+        item {
+            MensagemListaVazia(
+                titulo = "Não foi possível carregar a Home",
+                descricao = "Ocorreu um problema ao buscar os dados da Home. Tente novamente."
+            )
+        }
+        return
+    }
+
     // Card grande de boas-vindas
     item {
         CardBoasVindas(
@@ -86,7 +133,7 @@ fun LazyListScope.HomeScreen(
             // Resíduos disponíveis
             CardResumo(
                 // resumo? - acessa o objeto somente se ele não for null
-                valor = resumo?.residuosDisponiveis?.toString()?: "-",
+                valor = resumo?.residuosDisponiveis?.toString() ?: "-",
                 descricao = "Resíduos disponíveis",
                 icone = R.drawable.box_img,
                 modifier = Modifier.weight(1f)
@@ -111,7 +158,7 @@ fun LazyListScope.HomeScreen(
         ) {
             // Ofertas recebidas
             CardResumo(
-                valor = resumo?.ofertasRecebidas?.toString()?: "-",
+                valor = resumo?.ofertasRecebidas?.toString() ?: "-",
                 descricao = "Ofertas recebidas",
                 icone = R.drawable.oferta_img,
                 modifier = Modifier.weight(1f)
@@ -119,7 +166,7 @@ fun LazyListScope.HomeScreen(
 
             // Coletas agendadas
             CardResumo(
-                valor = resumo?.coletasAgendadas?.toString()?: "-",
+                valor = resumo?.coletasAgendadas?.toString() ?: "-",
                 descricao = "Coletas agendadas",
                 icone = R.drawable.calendario_img,
                 modifier = Modifier.weight(1f)

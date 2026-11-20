@@ -20,6 +20,11 @@ val CorTextoBase = Color(0xFF03201E)
 val BordaPadrao = Color(0xFFD6E1DD)
 val ResiduoFiltroTexto = Color(0xFF03201E)
 
+// ===============
+// Cores do Login
+// ===============
+val LoginBordaCampo = Color(0xFF9DA6A3)
+
 // ================
 // Cores do Header
 // ================

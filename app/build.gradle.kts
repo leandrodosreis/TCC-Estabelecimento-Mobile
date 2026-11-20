@@ -65,6 +65,9 @@ dependencies {
     // ViewModel
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
 
+    // Permite observar o ciclo de vida dentro do Jetpack Compose
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
+
     // Biblioteca para reproduzir animações Lottie no Jetpack Compose
     implementation("com.airbnb.android:lottie-compose:6.6.7")
 
@@ -73,4 +76,7 @@ dependencies {
 
     // Animações entre telas
     implementation("androidx.compose.animation:animation")
+
+    // Ícones adicionais do Material Design (olho da senha)
+    implementation("androidx.compose.material:material-icons-extended")
 }

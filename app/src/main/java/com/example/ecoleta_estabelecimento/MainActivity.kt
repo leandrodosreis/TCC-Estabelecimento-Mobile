@@ -1,59 +1,63 @@
 package com.example.ecoleta_estabelecimento
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.ecoleta_estabelecimento.auth.SessionManager
+import com.example.ecoleta_estabelecimento.auth.TokenSessao
 import com.example.ecoleta_estabelecimento.components.header.HeaderScreen
 import com.example.ecoleta_estabelecimento.components.layout.LayoutPadrao
 import com.example.ecoleta_estabelecimento.components.navigation.BarraNavegacaoInferior
-import com.example.ecoleta_estabelecimento.features.coletas.ColetaExemplo
-import com.example.ecoleta_estabelecimento.features.coletas.ColetasScreen
-import com.example.ecoleta_estabelecimento.features.coletas.components.DialogDetalhesOferta
-import com.example.ecoleta_estabelecimento.features.home.HomeScreen
+import com.example.ecoleta_estabelecimento.features.coletas.ColetasViewModel
 import com.example.ecoleta_estabelecimento.features.home.HomeViewModel
-import com.example.ecoleta_estabelecimento.features.home.model.OfertaResumo
-import com.example.ecoleta_estabelecimento.features.residuos.ResiduosScreen
 import com.example.ecoleta_estabelecimento.features.residuos.ResiduosViewModel
-import com.example.ecoleta_estabelecimento.features.residuos.components.AnimacaoSucessoResiduo
-import com.example.ecoleta_estabelecimento.features.residuos.components.DialogCancelarResiduo
-import com.example.ecoleta_estabelecimento.features.residuos.components.DialogDetalhesColeta
-import com.example.ecoleta_estabelecimento.features.residuos.components.DialogNovoResiduo
-import com.example.ecoleta_estabelecimento.features.residuos.model.Residuo
+import com.example.ecoleta_estabelecimento.features.routes.ColetasRoute
+import com.example.ecoleta_estabelecimento.features.routes.HomeRoute
+import com.example.ecoleta_estabelecimento.features.routes.LoginRoute
+import com.example.ecoleta_estabelecimento.features.routes.ResiduosRoute
 import com.example.ecoleta_estabelecimento.ui.theme.Branco
 import com.example.ecoleta_estabelecimento.ui.theme.EcoletaEstabelecimentoTheme
+import com.example.ecoleta_estabelecimento.ui.theme.VerdeFundo
+import com.example.ecoleta_estabelecimento.ui.theme.VerdePrincipal
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
 
@@ -62,24 +66,82 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             EcoletaEstabelecimentoTheme {
-
-                // Controlador responsável pelas rotas do aplicativo
-                val navController = rememberNavController()
-
-                Scaffold(
-                    modifier = Modifier.fillMaxSize(),
-                    containerColor = Branco
-                ) { innerPadding ->
-                    // Gerencia todas as telas
-                    NavegacaoEcoleta(
-                        navController = navController,
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+                // Antes de montar a navegação, verifica se existe uma sessão válida
+                EntradaEcoleta()
             }
         }
     }
 }
+
+// Controla a inicialização do aplicativo
+// Antes de criar as telas e as ViewModels, verifica se existe um JWT salvo e ainda válido
+// Se existir, inicia na Home, caso contrário, inicia no Login
+@Composable
+private fun EntradaEcoleta() {
+    // Obtém o contexto do aplicativo
+    val context = LocalContext.current
+
+    // Guarda qual será a primeira rota,
+    // null significa que a sessão ainda está sendo verificada
+    var destinoInicial by remember {
+        mutableStateOf<String?>(null)
+    }
+
+    // Executado quando essa função entra na composição
+    LaunchedEffect(Unit) {
+        // Recupera o token fora da thread principal,
+        // pois o SessionManager utiliza criptografia e armazenamento local
+        val possuiSessaoValida = withContext(
+            Dispatchers.IO
+        ) {
+            val sessionManager = SessionManager(context)
+
+            // recuperarToken:
+            // - Recupera o JWT criptografado
+            // - Verifica a expiração
+            // - Coloca o JWT no TokenSessão
+            // - Retorna null se não houver sessão utilizável
+            sessionManager.recuperarToken() != null
+        }
+
+        // Define a tela inicial somente depois de terminar a verificação da sessão
+        destinoInicial = if (possuiSessaoValida) {
+            Rotas.HOME
+        } else {
+            Rotas.LOGIN
+        }
+    }
+
+    // Enquanto a tela inicial não é confirmada, é exibido apenas o carregamento
+    if (destinoInicial == null) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(VerdeFundo),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(
+                color = VerdePrincipal
+            )
+        }
+    } else {
+        // Só cria o NavController depois de verificar a sessão
+        val navController = rememberNavController()
+
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            containerColor = Branco
+        ) { innerPadding ->
+            // A navegação recebe a rota inicial escolhida pela verificação do JWT
+            NavegacaoEcoleta(
+                navController = navController,
+                destinoInicial = destinoInicial!!,
+                modifier = Modifier.padding(innerPadding)
+            )
+        }
+    }
+}
+
 
 // Rotas disponíveis no aplicativo
 private object Rotas {
@@ -128,105 +190,64 @@ private fun direcaoEntreTelas(
 @Composable
 private fun NavegacaoEcoleta(
     navController: NavHostController,
+    destinoInicial: String,
     modifier: Modifier = Modifier
 ) {
     // ===============================
     // ViewModels utilizadas nas telas
     // ===============================
 
+    // Context necessário para acessar o armazenamento do app
+    val context = LocalContext.current
+
+    // Escopo utilizado para executar o logout sem bloquear a interface do usuário
+    val scope = rememberCoroutineScope()
+
+    // Reutiliza a instância do SessionManager durante as recomposições desta função
+    val sessionManager = remember(context) {
+        SessionManager(context.applicationContext)
+    }
+
     val homeViewModel: HomeViewModel = viewModel()
     val residuosViewModel: ResiduosViewModel = viewModel()
-
-    // Estados dos diálogos de resíduos
-    var residuoParaCancelar by remember {
-        mutableStateOf<Residuo?>(null)
-    }
-
-    var residuoParaEditar by remember {
-        mutableStateOf<Residuo?>(null)
-    }
-
-    var residuoParaVerColeta by remember {
-        mutableStateOf<Residuo?>(null)
-    }
-
-    // Oferta selecionada ao clicar em "Ver mais"
-    var coletaSelecionada by remember {
-        mutableStateOf<ColetaExemplo?>(null)
-    }
-
-    var mostrarAnimacaoEdicao by remember {
-        mutableStateOf(false)
-    }
-
-    // Exibe a animação de edição
-    LaunchedEffect(mostrarAnimacaoEdicao) {
-        if (mostrarAnimacaoEdicao) {
-            delay(2000)
-            mostrarAnimacaoEdicao = false
-        }
-    }
-
-    // Fecha o diálogo quando o cancelamento for confirmado
-    LaunchedEffect(residuosViewModel.idResiduoCancelado) {
-
-        val idCancelado = residuosViewModel.idResiduoCancelado
-        if (idCancelado != null) {
-            if (residuoParaCancelar?.idResiduo == idCancelado) {
-                residuoParaCancelar = null
-            }
-            residuosViewModel.limparEstadoCancelamentoResiduo()
-        }
-    }
-
-    // Converte os dados da API para o formato utilizado na Home
-    val dadosHome = homeViewModel.dadosHome
-
-    val ofertas = dadosHome?.ofertas?.map { oferta ->
-        OfertaResumo(
-            id = oferta.idOfertaInicial,
-            nomeColetor = oferta.nomeEmpresaColetora,
-            material = oferta.material,
-            quantidadeKg = oferta.quantidade,
-            data = oferta.dataDisponivel,
-            valor = oferta.valorOfertado
-                .replace(",", ".")
-                .toDoubleOrNull() ?: 0.0,
-            status = oferta.statusOferta
-        )
-    } ?: emptyList()
-
-    // Detalhes da oferta
-    coletaSelecionada?.let { coleta ->
-        DialogDetalhesOferta(
-            coleta = coleta,
-            onDismiss = { coletaSelecionada = null },
-            onAceitar = { oferta, nomeFuncionario ->
-                // Futuramente, vai ter o post da API
-                coletaSelecionada = null
-            },
-            onRecusar = { oferta ->
-                // Futuramente, vai ter o patch da API
-                coletaSelecionada = null
-            }
-        )
-    }
+    val coletasViewModel: ColetasViewModel = viewModel()
 
     // Função utilizada ao clicar em Sair
     val onLogout: () -> Unit = {
 
-        // Fecha eventuais diálogos abertos
-        residuoParaCancelar = null
-        residuoParaEditar = null
-        residuoParaVerColeta = null
-        mostrarAnimacaoEdicao = false
+        // Executa o encerramento em uma coroutine
+        scope.launch {
+            // A remoção do JWT utiliza armazenamento local, por isso é executada fora da thread principal
+            val sessaoRemovida = try {
+                withContext(Dispatchers.IO) {
+                    sessionManager.limparSessao()
+                }
+            } catch (e: Exception) {
+                // Se ocorrer uma falha inesperada, não confirmamos o logout
+                false
+            }
 
-        // Limpa os estados auxiliares dos diálogos
-        residuosViewModel.limparEstadoCancelamentoResiduo()
-        residuosViewModel.limparDetalhesColeta()
+            if (sessaoRemovida) {
+                // Limpa os estados auxiliares dos resíduos
+                residuosViewModel.limparEstadoCancelamentoResiduo()
+                residuosViewModel.limparDetalhesColeta()
 
-        // Envia o usuário para Login
-        navController.sairParaLogin()
+                // Limpa os estados auxiliares das coletas
+                coletasViewModel.limparDetalhesOferta()
+                coletasViewModel.limparEstadoAceitarOferta()
+                coletasViewModel.limparEstadoRecusarOferta()
+
+                // Após limpar o JWT, navega para o Login
+                navController.sairParaLogin()
+            } else {
+                // Se a remoção falhar, é informado ao usuário
+                Toast.makeText(
+                    context,
+                    "Não foi possível encerrar a sessão. Tente novamente.",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
     }
 
     // NAVHOST - NAVEGAÇÃO PRINCIPAL
@@ -235,6 +256,103 @@ private fun NavegacaoEcoleta(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
 
     val rotaAtual = navBackStackEntry?.destination?.route
+
+    // =====================================
+    // Monitoramento da expiração da sessão
+    // =====================================
+
+    // Obtém o ciclo de vida da Activity
+    // Será utilizado para detectar quando o app voltar ao primeiro plano (quando não estiver aberto em segundo plano)
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    // Contador atualizado sempre que a Activity recebe o evento ON_RESUME
+    // Quando ele mudar, o LaunchedEffect abaixo executará uma nova verificação do JWT
+    var verificacoesRetorno by remember {
+        mutableStateOf(0)
+    }
+
+    // Observa o ciclo de vida enquanto esta função estiver presente na composição
+    DisposableEffect(lifecycleOwner) {
+        // Cria um observador dos eventos da Activity
+        val observador = LifecycleEventObserver { _, evento ->
+            // ON_RESUME acontece quando a Activity retorna ao estado de interação
+            if (evento == Lifecycle.Event.ON_RESUME) {
+                verificacoesRetorno++
+            }
+        }
+
+        // Registra o observador no ciclo de vida
+        lifecycleOwner.lifecycle.addObserver(observador)
+
+        // Remove o observador quando a composição deixar de utilizá-lo
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observador)
+        }
+    }
+
+    // Executa o monitoramento quando:
+    // - A rota atual muda
+    // - O aplicativo retorna ao primeiro plano
+    // LaunchedEffect cancela a execução anterior quando uma dessas chaves muda
+    LaunchedEffect(rotaAtual, verificacoesRetorno) {
+        // Verifica somente nas telas autenticadas
+        // Login e Cadastro não exigem sessão
+
+        val telaAutenticada = rotaAtual in listOf(
+            Rotas.HOME,
+            Rotas.RESIDUOS,
+            Rotas.COLETAS,
+            Rotas.HISTORICO,
+            Rotas.PERFIL
+        )
+
+        if (!telaAutenticada) {
+            return@LaunchedEffect
+        }
+
+        // Obtém o JWT em memória
+        val token = TokenSessao.getToken()
+
+        // Se uma tela autenticada estiver aberta sem JWT, encerra a sessão para não deixar a tela desprotegida
+        if (token == null) {
+            onLogout()
+            return@LaunchedEffect
+        }
+
+        // Cria um SessionManager para consultar a expiração informada pelo backend
+        val sessionManager = SessionManager(
+            context.applicationContext
+        )
+
+        // Obtém o campo "exp", em segundos Unix
+        val expiracao = sessionManager.obterExpiracao(token)
+
+        // Obtém o instante atual, também em segundos Unix
+        val agora = System.currentTimeMillis() / 1000L
+
+        // Se o token estiver malformado ou expirado, encerra a sessão imediatamente
+        if (expiracao == null || expiracao <= agora) {
+            onLogout()
+            return@LaunchedEffect
+        }
+
+        // Converte a expiração para milissegundos e calcula o tempo restante da sessão
+        val tempoRestante = (expiracao * 1000L) - System.currentTimeMillis()
+
+        // Suspende a coroutine até o instante esperado de expiração do JWT
+        // delay não bloqueia a interface
+        if (tempoRestante > 0L) {
+            delay(tempoRestante)
+        }
+
+        // Antes de encerrar, confirma que o monitoramento continue com o mesmo JWT
+        // Também verifica novamente a expiração
+        // Isso evita encerrar uma sessão nova por causa de um temporizador antigo
+        if (TokenSessao.getToken() == token && !sessionManager.tokenEstaValido(token)) {
+            onLogout()
+        }
+    }
+
 
     // Header e barra inferior aparecem somente nas telas internas
     val mostrarNavegacao = rotaAtual in listOf(
@@ -269,8 +387,9 @@ private fun NavegacaoEcoleta(
 
         NavHost(
             navController = navController,
-            // Deve começar no login, quando estiver pronto
-            startDestination = Rotas.HOME,
+            // Recebe a rota definida pela EntradaEcoleta:
+            // HOME para sessão válida ou LOGIN para sessão ausente/expirada
+            startDestination = destinoInicial,
             modifier = Modifier.weight(1f),
 
             // Entrada da nova tela
@@ -325,22 +444,26 @@ private fun NavegacaoEcoleta(
                 )
             }
         ) {
-            // LOGIN - TEMPORÁRIO
+            // ======
+            // LOGIN
+            // ======
             composable(route = Rotas.LOGIN) {
-                LoginTemporario(
-                    onEntrarTeste = {
-                        // Acesso temporário para testar a navegação
+                LoginRoute(
+                    navController = navController,
+                    // Navega para a tela separada de cadastro
+                    onCadastro = {
+                        navController.navigate(Rotas.CADASTRO)
+                    },
+                    // Executado somente depois que o backend autenticar e o JWT for salvo com sucesso
+                    onLoginSucesso = {
                         navController.navigate(Rotas.HOME) {
+                            // Remove o Login do histórico de navegação
                             popUpTo(Rotas.LOGIN) {
                                 inclusive = true
                             }
-
+                            // Evita criar uma Home duplicada
                             launchSingleTop = true
                         }
-                    },
-
-                    onCadastro = {
-                        navController.navigate(Rotas.CADASTRO)
                     }
                 )
             }
@@ -359,51 +482,13 @@ private fun NavegacaoEcoleta(
             // =====
 
             composable(route = Rotas.HOME) {
-                // Atualiza a Home enquanto estiver nesta tela
-                LaunchedEffect(Unit) {
-                    homeViewModel.buscarHome()
-
-                    while (true) {
-                        delay(5_000)
-                        homeViewModel.buscarHome()
-                    }
-                }
-
-                TelaInterna(
-                    rotaAtual = Rotas.HOME,
-                    navController = navController,
+                HomeRoute(
+                    viewModel = homeViewModel,
+                    onNavigate = { rota ->
+                        navController.navegarMenu(rota)
+                    },
                     onLogout = onLogout
-                ) {
-                    HomeScreen(
-                        resumo = dadosHome?.resumo,
-                        ofertas = ofertas,
-                        // Botão para acessar Meus Resíduos
-                        onCadastrarResiduo = {
-                            navController.navegarMenu(Rotas.RESIDUOS)
-                        },
-                        // Botão para acessar Coletas
-                        onVerTodasOfertas = {
-                            navController.navegarMenu(Rotas.COLETAS)
-                        },
-                        onVerOferta = { idOferta ->
-                            println("Oferta selecionada: $idOferta")
-                        }
-                    )
-
-                    // Indica carregamento da Home
-                    if (homeViewModel.carregando) {
-                        item {
-                            Text("Carregando dados da Home...")
-                        }
-                    }
-
-                    // Exibe eventuais erros
-                    homeViewModel.mensagemErro?.let { erro ->
-                        item {
-                            Text(erro)
-                        }
-                    }
-                }
+                )
             }
 
             // ==============
@@ -411,31 +496,14 @@ private fun NavegacaoEcoleta(
             // ==============
 
             composable(route = Rotas.RESIDUOS) {
-                TelaInterna(
-                    rotaAtual = Rotas.RESIDUOS,
+                ResiduosRoute(
                     navController = navController,
+                    viewModel = residuosViewModel,
+                    onNavigate = { rota ->
+                        navController.navegarMenu(rota)
+                    },
                     onLogout = onLogout
-                ) {
-                    ResiduosScreen(
-                        viewModel = residuosViewModel,
-                        // Abre o diálogo de cancelamento
-                        onCancelarResiduo = { residuo ->
-                            residuosViewModel.limparEstadoCancelamentoResiduo()
-                            residuoParaCancelar = residuo
-                        },
-                        // Abre o diálogo de edição
-                        onEditarResiduo = { residuo ->
-                            residuoParaEditar = residuo
-                        },
-                        // Consulta os detalhes da coleta
-                        onVerColeta = { residuo ->
-                            residuoParaVerColeta = residuo
-                            residuosViewModel.buscarDetalhesColeta(
-                                residuo.idResiduo
-                            )
-                        }
-                    )
-                }
+                )
             }
 
             // ========
@@ -443,18 +511,14 @@ private fun NavegacaoEcoleta(
             // ========
 
             composable(route = Rotas.COLETAS) {
-                TelaInterna(
-                    rotaAtual = Rotas.COLETAS,
+                ColetasRoute(
                     navController = navController,
+                    viewModel = coletasViewModel,
+                    onNavigate = { rota ->
+                        navController.navegarMenu(rota)
+                    },
                     onLogout = onLogout
-                ) {
-                    ColetasScreen(
-                        onVerMais = { coleta ->
-                            // Guarda a oferta selecionada para abrir o diálogo
-                            coletaSelecionada = coleta
-                        }
-                    )
-                }
+                )
             }
 
             // ==========
@@ -501,66 +565,6 @@ private fun NavegacaoEcoleta(
             )
         }
     }
-
-    // Diálogo de cancelamento
-    residuoParaCancelar?.let { residuo ->
-        DialogCancelarResiduo(
-            residuo = residuo,
-            viewModel = residuosViewModel,
-            onDismiss = {
-                if (!residuosViewModel.cancelandoResiduo) {
-                    residuosViewModel.limparEstadoCancelamentoResiduo()
-
-                    residuoParaCancelar = null
-                }
-            },
-
-            onConfirmar = { idResiduo ->
-                residuosViewModel.cancelarResiduo(idResiduo)
-            }
-        )
-    }
-
-    // Diálogo de edição
-    residuoParaEditar?.let { residuo ->
-        DialogNovoResiduo(
-            residuoParaEditar = residuo,
-            viewModel = residuosViewModel,
-            onDismiss = {
-                if (!residuosViewModel.editandoResiduo) {
-                    residuoParaEditar = null
-                }
-            },
-            onCadastroSucesso = {},
-            onEdicaoSucesso = {
-                residuoParaEditar = null
-                mostrarAnimacaoEdicao = true
-            }
-        )
-    }
-
-    // Animação de sucesso de edição
-    if (mostrarAnimacaoEdicao) {
-        Dialog(
-            onDismissRequest = {
-                mostrarAnimacaoEdicao = false
-            }
-        ) {
-            AnimacaoSucessoResiduo(mensagem = "Resíduo editado com sucesso!")
-        }
-    }
-
-    // Diálogo com detalhes da coleta
-    if (residuoParaVerColeta != null) {
-        DialogDetalhesColeta(
-            viewModel = residuosViewModel,
-
-            onDismiss = {
-                residuoParaVerColeta = null
-                residuosViewModel.limparDetalhesColeta()
-            }
-        )
-    }
 }
 
 // ================================
@@ -599,8 +603,8 @@ private fun NavHostController.navegarMenu(
     }
 
     navigate(rota) {
-        // Evita acumular várias cópias das telas
-        popUpTo(graph.findStartDestination().id)
+        // Mantém a Home como base da navegação interna
+        popUpTo(Rotas.HOME)
 
         launchSingleTop = true
     }
@@ -613,44 +617,13 @@ private fun NavHostController.navegarMenu(
 
 private fun NavHostController.sairParaLogin() {
     navigate(Rotas.LOGIN) {
-        // Remove todas as telas internas do histórico, incluindo o destino inicial
-        popUpTo(graph.findStartDestination().id) {
-            inclusive = true
+        // Remove todas as telas anteriores e mantém apenas o grafo de navegação
+        popUpTo(graph.id) {
+            inclusive = false
         }
 
         // Evita criar cópias desnecessárias do Login
         launchSingleTop = true
-    }
-}
-
-// =================
-// Login temporário
-// =================
-
-@Composable
-fun LoginTemporario(
-    onEntrarTeste: () -> Unit,
-    onCadastro: () -> Unit
-) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-
-        Text("Tela de Login (em construção)")
-
-        Button(
-            onClick = onEntrarTeste
-        ) {
-            Text("Ir para Home (teste)")
-        }
-
-        TextButton(
-            onClick = onCadastro
-        ) {
-            Text("Não possui conta? Cadastre-se")
-        }
     }
 }
 

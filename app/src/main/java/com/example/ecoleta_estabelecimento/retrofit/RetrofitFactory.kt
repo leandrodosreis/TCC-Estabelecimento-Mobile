@@ -1,7 +1,7 @@
 package com.example.ecoleta_estabelecimento.retrofit
 
-import com.example.ecoleta_estabelecimento.auth.TokenManual
 import com.example.ecoleta_estabelecimento.auth.TokenProvider
+import com.example.ecoleta_estabelecimento.auth.TokenSessao
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -19,7 +19,7 @@ object RetrofitFactory {
     private const val BASE_URL = URL_EMULADOR
 
     // Responsável por fornecer o JWT
-    private val tokenProvider: TokenProvider = TokenManual()
+    private val tokenProvider: TokenProvider = TokenSessao
 
     // Configuração do cliente HTTP, criando um construtor de objetos, configurando seu comportamento
     private val okHttpClient = OkHttpClient.Builder()

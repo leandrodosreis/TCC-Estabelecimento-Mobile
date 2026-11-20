@@ -2,7 +2,10 @@ package com.example.ecoleta_estabelecimento.features.residuos
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,19 +21,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import com.example.ecoleta_estabelecimento.features.residuos.components.AnimacaoSucessoResiduo
+import com.example.ecoleta_estabelecimento.components.DialogSucessoEcoleta.DialogSucessoEcoleta
+import com.example.ecoleta_estabelecimento.components.loading.CarregamentoEcoleta
 import com.example.ecoleta_estabelecimento.features.residuos.components.BotaoNovoResiduo
 import com.example.ecoleta_estabelecimento.features.residuos.components.CardResiduo
 import com.example.ecoleta_estabelecimento.features.residuos.components.DialogNovoResiduo
@@ -43,7 +46,6 @@ import com.example.ecoleta_estabelecimento.ui.theme.VerdePrincipal
 import com.example.ecoleta_estabelecimento.ui.theme.nomeTela
 import com.example.ecoleta_estabelecimento.ui.theme.subTitulo
 import com.example.ecoleta_estabelecimento.ui.theme.textoPainel
-import kotlinx.coroutines.delay
 
 fun LazyListScope.ResiduosScreen(
     viewModel: ResiduosViewModel,
@@ -66,14 +68,6 @@ fun LazyListScope.ResiduosScreen(
         // Controla se a animação de sucesso está visível
         var mostrarAnimacaoSucesso by remember {
             mutableStateOf(false)
-        }
-
-        // Fecha automaticamente a animação após três segundos
-        LaunchedEffect(mostrarAnimacaoSucesso) {
-            if (mostrarAnimacaoSucesso) {
-                delay(2000)
-                mostrarAnimacaoSucesso = false
-            }
         }
 
         Column(
@@ -118,68 +112,75 @@ fun LazyListScope.ResiduosScreen(
                 color = subTitulo
             )
 
-            Spacer(modifier = Modifier.height(30.dp))
+            // Exibe os controles somente quando não houver erro na API
+            if (viewModel.residuos.isNotEmpty() && viewModel.erroCarregamentoResiduos == null) {
+                Spacer(modifier = Modifier.height(30.dp))
 
-            OutlinedTextField(
-                value = viewModel.busca,
-                onValueChange = { novoTexto ->
-                    viewModel.atualizarBusca(novoTexto)
-                },
-                // Define o botão de ação do teclado como Buscar
-                keyboardOptions = KeyboardOptions(
-                    imeAction = ImeAction.Search
-                ),
-                // Ao pressionar Buscar, remove o foco e fecha o teclado
-                keyboardActions = KeyboardActions(
-                    onSearch = {
-                        focusManager.clearFocus()
-                    }
-                ),
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = {
-                    Text("Buscar por material")
-                },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Pesquisar"
+                OutlinedTextField(
+                    value = viewModel.busca,
+                    onValueChange = { novoTexto ->
+                        viewModel.atualizarBusca(novoTexto)
+                    },
+                    // Define o botão de ação do teclado como Buscar
+                    keyboardOptions = KeyboardOptions(
+                        imeAction = ImeAction.Search
+                    ),
+                    // Ao pressionar Buscar, remove o foco e fecha o teclado
+                    keyboardActions = KeyboardActions(
+                        onSearch = {
+                            focusManager.clearFocus()
+                        }
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = {
+                        Text("Buscar por material")
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Pesquisar"
+                        )
+                    },
+                    singleLine = true,
+                    shape = MaterialTheme.shapes.medium,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = VerdePrincipal,
+                        unfocusedBorderColor = BordaPadrao,
+                        focusedContainerColor = Branco,
+                        unfocusedContainerColor = Branco
                     )
-                },
-                singleLine = true,
-                shape = MaterialTheme.shapes.medium,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = VerdePrincipal,
-                    unfocusedBorderColor = BordaPadrao,
-                    focusedContainerColor = Branco,
-                    unfocusedContainerColor = Branco
                 )
-            )
 
-            Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
-            // Chama os componentes para o filtro
-            FiltrosResiduos(
-                // Dados e seleção do filtro por material
-                tiposMateriais = viewModel.tiposMateriais,
-                idTipoSelecionado = viewModel.idTipoSelecionado,
-                onTipoSelecionado = viewModel::atualizarTipoSelecionado,
+                // Chama os componentes para o filtro
+                FiltrosResiduos(
+                    // Dados e seleção do filtro por material
+                    tiposMateriais = viewModel.tiposMateriais,
+                    idTipoSelecionado = viewModel.idTipoSelecionado,
+                    onTipoSelecionado = viewModel::atualizarTipoSelecionado,
 
-                // Dados e seleção do filtro por status
-                statusDisponiveis = viewModel.statusDisponiveis,
-                idStatusSelecionado = viewModel.idStatusSelecionado,
-                onStatusSelecionado = viewModel::atualizarStatusSelecionado
-            )
+                    // Dados e seleção do filtro por status
+                    statusDisponiveis = viewModel.statusDisponiveis,
+                    idStatusSelecionado = viewModel.idStatusSelecionado,
+                    onStatusSelecionado = viewModel::atualizarStatusSelecionado
+                )
+            }
 
-            Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(
+                    // Sem resíduos cadastrados -> Espaçamento de 30.dp
+                    // Com resíduos cadastrados -> Espaçamento de 20.dp
+                    if (viewModel.residuos.isEmpty()) 30.dp else 20.dp
+                ))
 
-            // Chama o componente do Botão de adicionar novo resíduo
-            BotaoNovoResiduo(
-                onClick = {
-                    // Abre o popup de cadastro de novo resíduo
-                    mostrarDialogNovoResiduo = true
-                }
-            )
-        }
+                // Chama o componente do Botão de adicionar novo resíduo
+                BotaoNovoResiduo(
+                    onClick = {
+                        // Abre o popup de cadastro de novo resíduo
+                        mostrarDialogNovoResiduo = true
+                    }
+                )
+            }
 
         // Exibe o formulário de cadastro quando solicitado
         if (mostrarDialogNovoResiduo) {
@@ -202,26 +203,39 @@ fun LazyListScope.ResiduosScreen(
 
         // Mostra a animação Lottie sobre a tela de resíduos
         if (mostrarAnimacaoSucesso) {
-            Dialog(
-                // Não permite fechar tocando fora da animação
-                onDismissRequest = {}
-            ) {
-                AnimacaoSucessoResiduo()
-            }
+            DialogSucessoEcoleta(
+                mensagem = "Resíduo cadastrado com sucesso!",
+                onConcluir = {
+                    mostrarAnimacaoSucesso = false
+                }
+            )
         }
     }
 
     when {
-        // Aguarda a consulta da API terminar
         viewModel.carregandoResiduos -> {
             item {
-                Text(
-                    text = "Carregando resíduos...",
-                    color = subTitulo,
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 30.dp)
-                )
+                        .padding(vertical = 30.dp),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    Text(
+                        text = "Carregando resíduos",
+                        color = VerdePrincipal
+                    )
+
+                    Box(
+                        modifier = Modifier.padding(
+                            start = 3.dp,
+                            bottom = 5.dp
+                        )
+                    ) {
+                        CarregamentoEcoleta.Pontinhos()
+                    }
+                }
             }
         }
 

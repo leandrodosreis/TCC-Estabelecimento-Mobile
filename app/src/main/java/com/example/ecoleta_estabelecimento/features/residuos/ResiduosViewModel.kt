@@ -354,8 +354,10 @@ class ResiduosViewModel : ViewModel() {
                     val corpo = resposta.body()
 
                     if (corpo?.status == true) {
-                        // Atualiza a lista observada pelo Compose
-                        residuos = corpo.response
+                        // Só atualiza o estado quando a lista mudar
+                        if (residuos != corpo.response) {
+                            residuos = corpo.response
+                        }
                     } else {
                         erroCarregamentoResiduos = "Não foi possível carregar os resíduos."
                     }
@@ -363,7 +365,11 @@ class ResiduosViewModel : ViewModel() {
                     erroCarregamentoResiduos = when (resposta.code()) {
                         400 -> "Não foi possível consultar os resíduos."
                         401 -> "Sua autenticação expirou ou é inválida."
-                        404 -> "Nenhum resíduo foi encontrado."
+                        404 -> {
+                            // Estabelecimento ainda não possui resíduos cadastrados
+                            residuos = emptyList()
+                            null
+                        }
                         500 -> "Ocorreu um erro interno no servidor."
                         else -> "Erro ao carregar resíduos. Código: ${resposta.code()}"
                     }
