@@ -1,5 +1,12 @@
 package com.example.ecoleta_estabelecimento
 
+/**************************************************************************************
+ * Objetivo: Projeto responsável por conter o aplicativo do Estabelecimento no Ecoleta
+ * Data: Novembro - 2026
+ * Autores: Kauan Alves, Gabriel Renato, Jefferson Neves
+ * Versão 1.0
+ **************************************************************************************/
+
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -8,16 +15,12 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -43,13 +46,13 @@ import androidx.navigation.navArgument
 import com.example.ecoleta_estabelecimento.auth.SessionManager
 import com.example.ecoleta_estabelecimento.auth.TokenSessao
 import com.example.ecoleta_estabelecimento.components.header.HeaderScreen
-import com.example.ecoleta_estabelecimento.components.layout.LayoutPadrao
 import com.example.ecoleta_estabelecimento.components.navigation.BarraNavegacaoInferior
 import com.example.ecoleta_estabelecimento.features.coletas.ColetasViewModel
 import com.example.ecoleta_estabelecimento.features.historico.HistoricoViewModel
 import com.example.ecoleta_estabelecimento.features.home.HomeViewModel
 import com.example.ecoleta_estabelecimento.features.perfil.PerfilViewModel
 import com.example.ecoleta_estabelecimento.features.residuos.ResiduosViewModel
+import com.example.ecoleta_estabelecimento.features.routes.CadastroRoute
 import com.example.ecoleta_estabelecimento.features.routes.ColetasRoute
 import com.example.ecoleta_estabelecimento.features.routes.HistoricoRoute
 import com.example.ecoleta_estabelecimento.features.routes.HomeRoute
@@ -482,11 +485,27 @@ private fun NavegacaoEcoleta(
                 )
             }
 
-            // CADASTRO - TEMPORÁRIO
+            // ========
+            // CADASTRO
+            // ========
             composable(route = Rotas.CADASTRO) {
-                CadastroTemporario(
+                CadastroRoute(
                     onVoltarLogin = {
-                        navController.popBackStack()
+                        // Tenta retornar diretamente para o Login
+                        val voltou = navController.popBackStack(
+                            route = Rotas.LOGIN,
+                            inclusive = false
+                        )
+
+                        // Caso o Login não esteja na pilha, recria a navegação para essa tela
+                        if (!voltou) {
+                            navController.navigate(Rotas.LOGIN) {
+                                popUpTo(navController.graph.id) {
+                                    inclusive = false
+                                }
+                                launchSingleTop = true
+                            }
+                        }
                     }
                 )
             }
@@ -536,9 +555,9 @@ private fun NavegacaoEcoleta(
                 )
             }
 
-            // ==========================================
+            // =====================================
             // COLETAS - OFERTA SELECIONADA NA HOME
-            // ==========================================
+            // =====================================
             composable(
                 // Recebe o ID da oferta enviado pela Home
                 route = "${Rotas.COLETAS}/oferta/{idOferta}",
@@ -619,33 +638,6 @@ private fun NavegacaoEcoleta(
     }
 }
 
-// ================================
-// Conteúdo interno entre as telas
-// ================================
-@Composable
-private fun TelaInterna(
-    rotaAtual: String,
-    navController: NavHostController,
-    onLogout: () -> Unit,
-    conteudo: LazyListScope.() -> Unit
-) {
-    LayoutPadrao(
-        modifier = Modifier.fillMaxSize(),
-
-        // Informa qual tela deve ficar destacada na BarraNavegacaoInferior
-        rotaAtual = rotaAtual,
-        // Utilizado tanto pela logo do Header quanto pelos cinco botões inferiores
-        onNavigate = { rota ->
-            navController.navegarMenu(rota)
-        },
-
-        // Utilizado pelo botão Sair do Header
-        onLogout = onLogout
-    ) {
-        conteudo()
-    }
-}
-
 private fun NavHostController.navegarMenu(
     rota: String
 ) {
@@ -662,10 +654,9 @@ private fun NavHostController.navegarMenu(
     }
 }
 
-
-// ============================
+// ===================
 // Sair do aplicativo
-// ============================
+// ===================
 
 private fun NavHostController.sairParaLogin() {
     navigate(Rotas.LOGIN) {
@@ -676,30 +667,5 @@ private fun NavHostController.sairParaLogin() {
 
         // Evita criar cópias desnecessárias do Login
         launchSingleTop = true
-    }
-}
-
-// ====================
-// Cadastro temporário
-// ====================
-
-@Composable
-private fun CadastroTemporario(
-    onVoltarLogin: () -> Unit
-) {
-
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-
-        Text("Tela de Cadastro (em construção)")
-
-        TextButton(
-            onClick = onVoltarLogin
-        ) {
-            Text("Voltar para Login")
-        }
     }
 }

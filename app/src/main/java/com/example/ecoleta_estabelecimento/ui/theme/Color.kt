@@ -20,6 +20,13 @@ val CorTextoBase = Color(0xFF03201E)
 val BordaPadrao = Color(0xFFD6E1DD)
 val ResiduoFiltroTexto = Color(0xFF03201E)
 
+// =================
+// Cores do Cadastro
+// =================
+val CadastroCardFundo = Color(0xFFF9F6F6)
+val CadastroCampoReadOnly = Color(0xFFE9ECEF)
+val CadastroBotao = Color(0xFF52B788)
+
 // ===============
 // Cores do Login
 // ===============
