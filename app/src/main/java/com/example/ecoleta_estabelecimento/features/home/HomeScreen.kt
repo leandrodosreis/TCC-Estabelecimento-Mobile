@@ -25,7 +25,6 @@ import com.example.ecoleta_estabelecimento.features.home.model.HomeResumo
 import com.example.ecoleta_estabelecimento.features.home.model.OfertaResumo
 import com.example.ecoleta_estabelecimento.features.residuos.components.MensagemListaVazia
 import com.example.ecoleta_estabelecimento.ui.theme.HomeCardVerdeClaro
-import com.example.ecoleta_estabelecimento.ui.theme.VerdePrincipal
 import com.example.ecoleta_estabelecimento.ui.theme.nomeTela
 import com.example.ecoleta_estabelecimento.ui.theme.subTitulo
 import com.example.ecoleta_estabelecimento.ui.theme.textoPainel
@@ -79,26 +78,13 @@ fun LazyListScope.HomeScreen(
     // Carregamento inicial
     if (carregando && resumo == null) {
         item {
-            Row(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 30.dp),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.Bottom
+                contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "Carregando dados",
-                    color = VerdePrincipal
-                )
-
-                Box(
-                    modifier = Modifier.padding(
-                        start = 3.dp,
-                        bottom = 5.dp
-                    )
-                ) {
-                    CarregamentoEcoleta.Pontinhos()
-                }
+                CarregamentoEcoleta.Circular()
             }
         }
         return

@@ -47,10 +47,12 @@ import com.example.ecoleta_estabelecimento.components.layout.LayoutPadrao
 import com.example.ecoleta_estabelecimento.components.navigation.BarraNavegacaoInferior
 import com.example.ecoleta_estabelecimento.features.coletas.ColetasViewModel
 import com.example.ecoleta_estabelecimento.features.home.HomeViewModel
+import com.example.ecoleta_estabelecimento.features.perfil.PerfilViewModel
 import com.example.ecoleta_estabelecimento.features.residuos.ResiduosViewModel
 import com.example.ecoleta_estabelecimento.features.routes.ColetasRoute
 import com.example.ecoleta_estabelecimento.features.routes.HomeRoute
 import com.example.ecoleta_estabelecimento.features.routes.LoginRoute
+import com.example.ecoleta_estabelecimento.features.routes.PerfilRoute
 import com.example.ecoleta_estabelecimento.features.routes.ResiduosRoute
 import com.example.ecoleta_estabelecimento.ui.theme.Branco
 import com.example.ecoleta_estabelecimento.ui.theme.EcoletaEstabelecimentoTheme
@@ -213,6 +215,7 @@ private fun NavegacaoEcoleta(
     val homeViewModel: HomeViewModel = viewModel()
     val residuosViewModel: ResiduosViewModel = viewModel()
     val coletasViewModel: ColetasViewModel = viewModel()
+    val perfilViewModel: PerfilViewModel = viewModel()
 
     // Função utilizada ao clicar em Sair
     val onLogout: () -> Unit = {
@@ -586,17 +589,14 @@ private fun NavegacaoEcoleta(
             // ========
             // PERFIL
             // ========
-
             composable(route = Rotas.PERFIL) {
-                TelaInterna(
-                    rotaAtual = Rotas.PERFIL,
-                    navController = navController,
+                PerfilRoute(
+                    viewModel = perfilViewModel,
+                    onNavigate = { rota ->
+                        navController.navegarMenu(rota)
+                    },
                     onLogout = onLogout
-                ) {
-                    item {
-                        Text("Tela de Perfil")
-                    }
-                }
+                )
             }
         }
 

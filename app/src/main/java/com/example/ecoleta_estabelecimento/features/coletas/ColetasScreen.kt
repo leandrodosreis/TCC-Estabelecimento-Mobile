@@ -3,7 +3,6 @@ package com.example.ecoleta_estabelecimento.features.coletas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -84,26 +83,13 @@ fun LazyListScope.ColetasScreen(
 
             // Carregamento inicial
             if (viewModel.carregandoColetas && viewModel.coletas.isEmpty()) {
-                Row(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 30.dp),
-                    horizontalArrangement = Arrangement.Start,
-                    verticalAlignment = Alignment.Bottom
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "Carregando coletas",
-                        color = VerdePrincipal
-                    )
-
-                    Box(
-                        modifier = Modifier.padding(
-                            start = 3.dp,
-                            bottom = 5.dp
-                        )
-                    ) {
-                        CarregamentoEcoleta.Pontinhos()
-                    }
+                    CarregamentoEcoleta.Circular()
                 }
             } else if (viewModel.erroCarregamentoColetas != null) {
                 // Mensagem de erro padronizada
