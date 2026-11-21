@@ -46,10 +46,12 @@ import com.example.ecoleta_estabelecimento.components.header.HeaderScreen
 import com.example.ecoleta_estabelecimento.components.layout.LayoutPadrao
 import com.example.ecoleta_estabelecimento.components.navigation.BarraNavegacaoInferior
 import com.example.ecoleta_estabelecimento.features.coletas.ColetasViewModel
+import com.example.ecoleta_estabelecimento.features.historico.HistoricoViewModel
 import com.example.ecoleta_estabelecimento.features.home.HomeViewModel
 import com.example.ecoleta_estabelecimento.features.perfil.PerfilViewModel
 import com.example.ecoleta_estabelecimento.features.residuos.ResiduosViewModel
 import com.example.ecoleta_estabelecimento.features.routes.ColetasRoute
+import com.example.ecoleta_estabelecimento.features.routes.HistoricoRoute
 import com.example.ecoleta_estabelecimento.features.routes.HomeRoute
 import com.example.ecoleta_estabelecimento.features.routes.LoginRoute
 import com.example.ecoleta_estabelecimento.features.routes.PerfilRoute
@@ -216,6 +218,7 @@ private fun NavegacaoEcoleta(
     val residuosViewModel: ResiduosViewModel = viewModel()
     val coletasViewModel: ColetasViewModel = viewModel()
     val perfilViewModel: PerfilViewModel = viewModel()
+    val historicoViewModel: HistoricoViewModel = viewModel()
 
     // Função utilizada ao clicar em Sair
     val onLogout: () -> Unit = {
@@ -573,17 +576,14 @@ private fun NavegacaoEcoleta(
             // ==========
             // HISTÓRICO
             // ==========
-
             composable(route = Rotas.HISTORICO) {
-                TelaInterna(
-                    rotaAtual = Rotas.HISTORICO,
-                    navController = navController,
+                HistoricoRoute(
+                    viewModel = historicoViewModel,
+                    onNavigate = { rota ->
+                        navController.navegarMenu(rota)
+                    },
                     onLogout = onLogout
-                ) {
-                    item {
-                        Text("Tela de Histórico")
-                    }
-                }
+                )
             }
 
             // ========

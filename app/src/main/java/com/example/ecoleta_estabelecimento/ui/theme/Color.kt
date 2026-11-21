@@ -93,3 +93,10 @@ val NovoResiduoConfirmar = Color(0xFF22AC78)
 
 // Cor utilizada nas mensagens e bordas de erro dos campos do formulário de novo resíduo.
 val NovoResiduoErro = Color(0xFFD32F2F)
+
+// =====================
+// Histórico cancelado
+// =====================
+
+val HistoricoCanceladoFundo = Color(0xFFFDE8E8)
+val HistoricoCanceladoTexto = Color(0xFFDC2626)
