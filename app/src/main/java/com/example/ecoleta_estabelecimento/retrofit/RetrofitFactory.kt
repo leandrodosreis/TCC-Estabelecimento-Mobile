@@ -15,8 +15,9 @@ object RetrofitFactory {
 
     private const val URL_NUVEM = "https://estabelecimentos-ecoleta-tcc.onrender.com/v1/ecoleta/" // URL da API na nuvem
 
+    private const val URL_CELULAR_SENAI = "http://127.0.0.1:8000/v1/ecoleta/" // IP DA MÁQUINA PARA RODAR NO CELULAR, MAS A API LOCAL
     // Altere aqui quando trocar o dispositivo de teste
-    private const val BASE_URL = URL_EMULADOR
+    private const val BASE_URL = URL_CELULAR_SENAI
 
     // Responsável por fornecer o JWT
     private val tokenProvider: TokenProvider = TokenSessao
