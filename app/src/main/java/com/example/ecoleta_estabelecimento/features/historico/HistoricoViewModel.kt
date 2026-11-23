@@ -63,6 +63,43 @@ class HistoricoViewModel : ViewModel() {
     var erroCarregamentoHistorico by mutableStateOf<String?>(null)
         private set
 
+    // --- PAGINAÇÃO ---
+    var paginaAtual by mutableStateOf(1)
+        private set
+
+    val itensPorPagina = 3
+
+    fun mudarPagina(novaPagina: Int) {
+        paginaAtual = novaPagina
+    }
+
+    fun atualizarBuscaComPaginacao(novaBusca: String) {
+        atualizarBusca(novaBusca)
+        paginaAtual = 1
+    }
+
+    fun atualizarTipoSelecionadoComPaginacao(tipo: String?) {
+        atualizarTipoSelecionado(tipo)
+        paginaAtual = 1
+    }
+
+    fun atualizarStatusSelecionadoComPaginacao(status: String?) {
+        atualizarStatusSelecionado(status)
+        paginaAtual = 1
+    }
+
+    val totalPaginas: Int
+        get() {
+            val total = registrosFiltrados.size
+            return if (total == 0) 1 else kotlin.math.ceil(total.toDouble() / itensPorPagina).toInt()
+        }
+
+    val registrosPaginados: List<HistoricoEstabelecimento>
+        get() {
+            val inicio = (paginaAtual - 1) * itensPorPagina
+            return registrosFiltrados.drop(inicio).take(itensPorPagina)
+        }
+
     // Busca o histórico do estabelecimento autenticado
     fun carregarHistorico() {
         // Evita executar a mesma consulta simultaneamente

@@ -472,6 +472,46 @@ class ResiduosViewModel : ViewModel() {
             correspondeBusca && correspondeTipo && correspondeStatus
         }
 
+    // --- PAGINAÇÃO ---
+    var paginaAtual by mutableStateOf(1)
+        private set
+
+    val itensPorPagina = 3
+
+    fun mudarPagina(novaPagina: Int) {
+        paginaAtual = novaPagina
+    }
+
+    // Sempre que o usuário buscar algo ou mexer nos filtros, volta para a página 1
+    fun atualizarBuscaComPaginacao(novaBusca: String) {
+        atualizarBusca(novaBusca)
+        paginaAtual = 1
+    }
+
+    fun atualizarTipoSelecionadoComPaginacao(idTipo: Int?) {
+        atualizarTipoSelecionado(idTipo)
+        paginaAtual = 1
+    }
+
+    fun atualizarStatusSelecionadoComPaginacao(idStatus: Int?) {
+        atualizarStatusSelecionado(idStatus)
+        paginaAtual = 1
+    }
+
+    // Calcula o total de páginas com base na lista filtrada
+    val totalPaginas: Int
+        get() {
+            val total = residuosFiltrados.size
+            return if (total == 0) 1 else kotlin.math.ceil(total.toDouble() / itensPorPagina).toInt()
+        }
+
+    // Retorna apenas os 5 resíduos da página atual
+    val residuosPaginados: List<Residuo>
+        get() {
+            val inicio = (paginaAtual - 1) * itensPorPagina
+            return residuosFiltrados.drop(inicio).take(itensPorPagina)
+        }
+
 
     // Executado automaticamente quando a ViewModel é criada
     init {

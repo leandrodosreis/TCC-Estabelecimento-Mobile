@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ecoleta_estabelecimento.components.DialogSucessoEcoleta.DialogSucessoEcoleta
 import com.example.ecoleta_estabelecimento.components.loading.CarregamentoEcoleta
+import com.example.ecoleta_estabelecimento.components.paginacao.ComponentePaginacao
 import com.example.ecoleta_estabelecimento.features.residuos.components.BotaoNovoResiduo
 import com.example.ecoleta_estabelecimento.features.residuos.components.CardResiduo
 import com.example.ecoleta_estabelecimento.features.residuos.components.DialogNovoResiduo
@@ -117,7 +118,7 @@ fun LazyListScope.ResiduosScreen(
                 OutlinedTextField(
                     value = viewModel.busca,
                     onValueChange = { novoTexto ->
-                        viewModel.atualizarBusca(novoTexto)
+                        viewModel.atualizarBuscaComPaginacao(novoTexto)
                     },
                     // Define o botão de ação do teclado como Buscar
                     keyboardOptions = KeyboardOptions(
@@ -156,12 +157,18 @@ fun LazyListScope.ResiduosScreen(
                     // Dados e seleção do filtro por material
                     tiposMateriais = viewModel.tiposMateriais,
                     idTipoSelecionado = viewModel.idTipoSelecionado,
-                    onTipoSelecionado = viewModel::atualizarTipoSelecionado,
+                    // Reseta para a pág 1 ao filtrar por tipo
+                    onTipoSelecionado = { idTipo ->
+                        viewModel.atualizarTipoSelecionadoComPaginacao(idTipo)
+                    },
 
                     // Dados e seleção do filtro por status
                     statusDisponiveis = viewModel.statusDisponiveis,
                     idStatusSelecionado = viewModel.idStatusSelecionado,
-                    onStatusSelecionado = viewModel::atualizarStatusSelecionado
+                    // Reseta para a pág 1 ao filtrar por status
+                    onStatusSelecionado = { idStatus ->
+                        viewModel.atualizarStatusSelecionadoComPaginacao(idStatus)
+                    }
                 )
             }
 
@@ -267,7 +274,7 @@ fun LazyListScope.ResiduosScreen(
         // Exibe normalmente os resíduos retornados pela API
         else -> {
             items(
-                items = viewModel.residuosFiltrados,
+                items = viewModel.residuosPaginados,
                 key = { residuo -> residuo.idResiduo }
             ) { residuo ->
                 CardResiduo(
@@ -282,6 +289,20 @@ fun LazyListScope.ResiduosScreen(
                         onVerColeta(residuo)
                     }
                 )
+            }
+
+            // Componente de paginação no rodapé da lista
+            if (viewModel.totalPaginas > 1) {
+                item {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    ComponentePaginacao(
+                        paginaAtual = viewModel.paginaAtual,
+                        totalPaginas = viewModel.totalPaginas,
+                        onPaginaSelecionada = { novaPagina ->
+                            viewModel.mudarPagina(novaPagina)
+                        }
+                    )
+                }
             }
         }
     }

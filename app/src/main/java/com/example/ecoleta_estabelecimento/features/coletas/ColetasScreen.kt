@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ecoleta_estabelecimento.components.loading.CarregamentoEcoleta
+import com.example.ecoleta_estabelecimento.components.paginacao.ComponentePaginacao
 import com.example.ecoleta_estabelecimento.features.coletas.components.CardColeta
 import com.example.ecoleta_estabelecimento.features.coletas.components.FiltroColetas
 import com.example.ecoleta_estabelecimento.features.coletas.model.Coleta
@@ -76,7 +77,7 @@ fun LazyListScope.ColetasScreen(
                 FiltroColetas(
                     filtroSelecionado = viewModel.filtroSelecionado,
                     onFiltroSelecionado = { novoFiltro ->
-                        viewModel.atualizarFiltro(novoFiltro)
+                        viewModel.atualizarFiltroComPaginacao(novoFiltro)
                     }
                 )
             }
@@ -103,7 +104,12 @@ fun LazyListScope.ColetasScreen(
                     SecaoColetas(
                         titulo = "Ofertas pendentes",
                         subtitulo = "ATENÇÃO NECESSÁRIA",
-                        coletas = viewModel.ofertasPendentes,
+                        coletas = viewModel.ofertasPendentesPaginadas,
+                        paginaAtual = viewModel.paginaAtualPendentes,
+                        totalPaginas = viewModel.totalPaginasPendentes,
+                        onPaginaSelecionada = { novaPagina ->
+                            viewModel.mudarPaginaPendentes(novaPagina)
+                        },
                         onVerMais = onVerMais
                     )
                 }
@@ -113,7 +119,12 @@ fun LazyListScope.ColetasScreen(
                     SecaoColetas(
                         titulo = "Ofertas aceitas",
                         subtitulo = "OFERTAS CONFIRMADAS",
-                        coletas = viewModel.ofertasAceitas,
+                        coletas = viewModel.ofertasAceitasPaginadas,
+                        paginaAtual = viewModel.paginaAtualAceitas,
+                        totalPaginas = viewModel.totalPaginasAceitas,
+                        onPaginaSelecionada = { novaPagina ->
+                            viewModel.mudarPaginaAceitas(novaPagina)
+                        },
                         onVerMais = onVerMais
                     )
                 }
@@ -128,7 +139,10 @@ private fun SecaoColetas(
     titulo: String,
     subtitulo: String,
     coletas: List<Coleta>,
-    onVerMais: (Coleta) -> Unit
+    onVerMais: (Coleta) -> Unit,
+    paginaAtual: Int,
+    totalPaginas: Int,
+    onPaginaSelecionada: (Int) -> Unit
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(14.dp)
@@ -166,6 +180,16 @@ private fun SecaoColetas(
                 onVerMais = {
                     onVerMais(coleta)
                 }
+            )
+        }
+
+        // Paginação exclusiva desta seção (aparece se essa seção tiver mais de 5 itens)
+        if (totalPaginas > 1) {
+            Spacer(modifier = Modifier.height(6.dp))
+            ComponentePaginacao(
+                paginaAtual = paginaAtual,
+                totalPaginas = totalPaginas,
+                onPaginaSelecionada = onPaginaSelecionada
             )
         }
     }

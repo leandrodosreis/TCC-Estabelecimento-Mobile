@@ -170,7 +170,7 @@ fun LazyListScope.HomeScreen(
     // Seção de ofertas recebidas
     item {
         SecaoOfertasRecebidas(
-            ofertas = ofertas,
+            ofertas = ofertas.take(2),
             onVerTodas = onVerTodasOfertas,
             onVerOferta = onVerOferta
         )

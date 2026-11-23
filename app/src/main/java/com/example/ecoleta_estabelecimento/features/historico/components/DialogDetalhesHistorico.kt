@@ -216,7 +216,7 @@ fun DialogDetalhesHistorico(
                             } else {
                                 LinhaDetalheHistorico(
                                     titulo = "Quantidade:",
-                                    valor = detalhes.quantidade
+                                    valor = "${detalhes.quantidade} kg"
                                 )
 
                                 LinhaDetalheHistorico(
@@ -251,7 +251,7 @@ fun DialogDetalhesHistorico(
 
                                 detalhes.dataColeta.exibirSeDisponivel("Data da coleta:")
 
-                                detalhes.horaColeta.exibirSeDisponivel("Hora da coleta:")
+                                detalhes.horaColeta?.take(5).exibirSeDisponivel("Hora da coleta:")
                             }
                         }
                     }

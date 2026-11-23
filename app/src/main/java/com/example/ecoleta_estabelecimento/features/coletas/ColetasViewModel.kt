@@ -32,6 +32,56 @@ class ColetasViewModel : ViewModel() {
     var filtroSelecionado by mutableStateOf("Todas")
         private set
 
+    // --- PAGINAÇÃO INDEPENDENTE ---
+    val itensPorPagina = 3
+
+    // Controle das Pendentes
+    var paginaAtualPendentes by mutableStateOf(1)
+        private set
+
+    fun mudarPaginaPendentes(novaPagina: Int) {
+        paginaAtualPendentes = novaPagina
+    }
+
+    val totalPaginasPendentes: Int
+        get() {
+            val total = ofertasPendentes.size
+            return if (total == 0) 1 else kotlin.math.ceil(total.toDouble() / itensPorPagina).toInt()
+        }
+
+    val ofertasPendentesPaginadas: List<Coleta>
+        get() {
+            val inicio = (paginaAtualPendentes - 1) * itensPorPagina
+            return ofertasPendentes.drop(inicio).take(itensPorPagina)
+        }
+
+    // Controle das Aceitas
+    var paginaAtualAceitas by mutableStateOf(1)
+        private set
+
+    fun mudarPaginaAceitas(novaPagina: Int) {
+        paginaAtualAceitas = novaPagina
+    }
+
+    val totalPaginasAceitas: Int
+        get() {
+            val total = ofertasAceitas.size
+            return if (total == 0) 1 else kotlin.math.ceil(total.toDouble() / itensPorPagina).toInt()
+        }
+
+    val ofertasAceitasPaginadas: List<Coleta>
+        get() {
+            val inicio = (paginaAtualAceitas - 1) * itensPorPagina
+            return ofertasAceitas.drop(inicio).take(itensPorPagina)
+        }
+
+    // Reseta ambas as paginações ao trocar o filtro
+    fun atualizarFiltroComPaginacao(filtro: String) {
+        atualizarFiltro(filtro)
+        paginaAtualPendentes = 1
+        paginaAtualAceitas = 1
+    }
+
     fun atualizarFiltro(filtro: String) {
         if (filtro in listOf("Todas", "Pendentes", "Aceitas")) {
             filtroSelecionado = filtro

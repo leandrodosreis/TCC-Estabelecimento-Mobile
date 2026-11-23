@@ -12,6 +12,10 @@ val Branco = Color(0xFFFFFFFF)
 val Preto = Color(0xFF000000)
 val Transparente = Color.Transparent
 
+val Paginacao = Color(0xFFD6E1DD)
+val PaginacaoElse = Color(0xFFE3E8E5)
+val BotaoPaginacao = Color(0xFFF9F9F9)
+
 val CorTextoBase = Color(0xFF03201E)
 
 // =====================================

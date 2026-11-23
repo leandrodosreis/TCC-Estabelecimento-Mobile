@@ -11,12 +11,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,6 +31,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ecoleta_estabelecimento.R
+import com.example.ecoleta_estabelecimento.ui.theme.BordaPadrao
 import com.example.ecoleta_estabelecimento.ui.theme.Branco
 import com.example.ecoleta_estabelecimento.ui.theme.HistoricoCanceladoFundo
 import com.example.ecoleta_estabelecimento.ui.theme.HistoricoCanceladoTexto
@@ -39,16 +42,11 @@ import com.example.ecoleta_estabelecimento.ui.theme.OfertaTextoDetalhe
 import com.example.ecoleta_estabelecimento.ui.theme.nomeTela
 import com.example.ecoleta_estabelecimento.ui.theme.subTitulo
 
-// =====================
-// Tipos de histórico
-// =====================
-
 enum class TipoHistorico {
     CONCLUIDA,
     CANCELADO
 }
 
-// Card do histórico
 @Composable
 fun CardHistorico(
     titulo: String,
@@ -59,8 +57,6 @@ fun CardHistorico(
     valor: String? = null,
     onVerMais: () -> Unit
 ) {
-
-    // Define as cores conforme o tipo do registro
     val statusFundo = when (tipo) {
         TipoHistorico.CONCLUIDA -> OfertaAceitaFundo
         TipoHistorico.CANCELADO -> HistoricoCanceladoFundo
@@ -76,131 +72,195 @@ fun CardHistorico(
         TipoHistorico.CANCELADO -> "CANCELADO"
     }
 
-    // Estrutura principal
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(15.dp))
-            .background(Branco)
-            .heightIn(min = 130.dp)
-            .padding(
-                horizontal = 12.dp,
-                vertical = 20.dp
-            ),
-        verticalAlignment = Alignment.CenterVertically
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(15.dp),
+        colors = CardDefaults.cardColors(containerColor = Branco),
+        border = BorderStroke(1.dp, BordaPadrao)
     ) {
-
-        // Ícone do registro
-        Image(
-            painter = painterResource(R.drawable.icone_coletas_card),
-            contentDescription = if (tipo == TipoHistorico.CONCLUIDA) {
-                "Coleta concluída"
-            } else {
-                "Resíduo cancelado"
-            },
-            modifier = Modifier.size(50.dp)
-        )
-
-        Spacer(modifier = Modifier.width(10.dp))
-
-        // Informações
         Column(
-            modifier = Modifier.weight(1f)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-
-            Text(
-                text = titulo,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                fontWeight = FontWeight.Bold,
-                fontSize = 20.sp,
-                color = nomeTela
-            )
-
-            Spacer(modifier = Modifier.height(5.dp))
-
-            Text(
-                text = "$material - $quantidade",
-                fontSize = 15.sp,
-                color = subTitulo
-            )
-
-            Text(
-                text = data,
-                fontSize = 13.sp,
-                color = subTitulo
-            )
-
-            if (tipo == TipoHistorico.CONCLUIDA && !valor.isNullOrBlank()) {
-
-                Spacer(modifier = Modifier.height(15.dp))
-
-                Text(
-                    text = "Valor acordado",
-                    fontSize = 12.sp,
-                    color = OfertaTextoDetalhe
-                )
-
-                Spacer(modifier = Modifier.height(2.dp))
-
-                Text(
-                    text = valor,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = nomeTela
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        // Status e botão
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-
-            Box(
-                modifier = Modifier
-                    .width(95.dp)
-                    .height(35.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(statusFundo),
-                contentAlignment = Alignment.Center
+            // 1. TOPO: Ícone, Título e Status
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.icone_coletas_card),
+                        contentDescription = if (tipo == TipoHistorico.CONCLUIDA) {
+                            "Coleta concluída"
+                        } else {
+                            "Resíduo cancelado"
+                        },
+                        modifier = Modifier.size(45.dp)
+                    )
 
-                Text(
-                    text = statusRotulo,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = statusTexto,
-                    maxLines = 1,
-                    softWrap = false
-                )
+                    Spacer(modifier = Modifier.width(10.dp))
+
+                    Text(
+                        text = titulo,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = nomeTela,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(top = 8.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Box(
+                    modifier = Modifier
+                        .width(95.dp)
+                        .height(35.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(statusFundo),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = statusRotulo,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = statusTexto,
+                        maxLines = 1,
+                        softWrap = false
+                    )
+                }
             }
 
-            OutlinedButton(
-                onClick = onVerMais,
-                shape = RoundedCornerShape(8.dp),
-                border = BorderStroke(1.dp, OfertaBotaoBorda),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    containerColor = Branco,
-                    contentColor = nomeTela
-                ),
-                contentPadding = PaddingValues(
-                    horizontal = 4.dp,
-                    vertical = 0.dp
-                ),
-                modifier = Modifier
-                    .width(95.dp)
-                    .height(40.dp)
-            ) {
+            HorizontalDivider(color = BordaPadrao, thickness = 1.dp)
 
-                Text(
-                    text = "Ver mais",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Normal
-                )
+            // 2. MEIO: 3 Colunas (Material, Quantidade, Data)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Material",
+                        fontSize = 12.sp,
+                        color = subTitulo
+                    )
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    Text(
+                        text = material,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = nomeTela,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Quantidade",
+                        fontSize = 12.sp,
+                        color = subTitulo
+                    )
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    Text(
+                        text = "$quantidade kg",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = nomeTela,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "Data",
+                        fontSize = 12.sp,
+                        color = subTitulo
+                    )
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    Text(
+                        text = data,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = nomeTela,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+
+            HorizontalDivider(color = BordaPadrao, thickness = 1.dp)
+
+            // 3. RODAPÉ: "Valor acordado" e o valor lado a lado na mesma linha
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (tipo == TipoHistorico.CONCLUIDA && !valor.isNullOrBlank()) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.Bottom,
+                        modifier = Modifier.padding(start = 6.dp)
+                    ) {
+                        Text(
+                            text = "Valor acordado:",
+                            fontSize = 13.sp,
+                            color = OfertaTextoDetalhe
+                        )
+                        Text(
+                            text = if (valor.startsWith("R$")) {
+                                valor
+                            } else {
+                                "R$ $valor"
+                            },
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = nomeTela
+                        )
+                    }
+                } else {
+                    Spacer(modifier = Modifier.width(1.dp))
+                }
+
+                OutlinedButton(
+                    onClick = onVerMais,
+                    shape = RoundedCornerShape(8.dp),
+                    border = BorderStroke(1.dp, OfertaBotaoBorda),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = Branco,
+                        contentColor = nomeTela
+                    ),
+                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
+                    modifier = Modifier
+                        .width(95.dp)
+                        .height(40.dp)
+                ) {
+                    Text(
+                        text = "Ver mais",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Normal
+                    )
+                }
             }
         }
     }

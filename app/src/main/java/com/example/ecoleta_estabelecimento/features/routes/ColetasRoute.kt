@@ -111,7 +111,6 @@ fun ColetasRoute(
         // Atualiza as ofertas ao puxar a tela para baixo
         onAtualizar = {
             if (!viewModel.carregandoColetas) {
-                atualizacaoManual = true
                 viewModel.carregarColetas()
             }
         }

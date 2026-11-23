@@ -28,6 +28,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ecoleta_estabelecimento.components.loading.CarregamentoEcoleta
+import com.example.ecoleta_estabelecimento.components.paginacao.ComponentePaginacao
 import com.example.ecoleta_estabelecimento.features.historico.components.CardHistorico
 import com.example.ecoleta_estabelecimento.features.historico.components.FiltrosHistorico
 import com.example.ecoleta_estabelecimento.features.historico.components.TipoHistorico
@@ -99,7 +100,7 @@ fun LazyListScope.HistoricoScreen(
                 OutlinedTextField(
                     value = viewModel.busca,
                     onValueChange = { novoTexto ->
-                        viewModel.atualizarBusca(novoTexto)
+                        viewModel.atualizarBuscaComPaginacao(novoTexto)
                     },
                     // Define o botão de ação do teclado como Buscar
                     keyboardOptions = KeyboardOptions(
@@ -138,11 +139,17 @@ fun LazyListScope.HistoricoScreen(
                     // Dados e seleção do filtro por material
                     tiposDisponiveis = viewModel.tiposDisponiveis,
                     tipoSelecionado = viewModel.tipoSelecionado,
-                    onTipoSelecionado = viewModel::atualizarTipoSelecionado,
+                    onTipoSelecionado = { tipo ->
+                        // Reseta para a pág 1 ao filtrar por tipo
+                        viewModel.atualizarTipoSelecionadoComPaginacao(tipo)
+                    },
 
                     // Dados e seleção do filtro por status
                     statusSelecionado = viewModel.statusSelecionado,
-                    onStatusSelecionado = viewModel::atualizarStatusSelecionado
+                    onStatusSelecionado = { status ->
+                        // Reseta para a pág 1 ao filtrar por status
+                        viewModel.atualizarStatusSelecionadoComPaginacao(status)
+                    }
                 )
             }
         }
@@ -205,7 +212,7 @@ fun LazyListScope.HistoricoScreen(
         // Exibe normalmente os registros retornados pela API
         else -> {
             items(
-                items = viewModel.registrosFiltrados,
+                items = viewModel.registrosPaginados,
                 key = { registro ->
                     if (registro.idColeta != null) {
                         "coleta_${registro.idColeta}"
@@ -241,6 +248,20 @@ fun LazyListScope.HistoricoScreen(
                         onVerMais(registro)
                     }
                 )
+            }
+
+            // Componente de paginação no final da lista
+            if (viewModel.totalPaginas > 1) {
+                item {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    ComponentePaginacao(
+                        paginaAtual = viewModel.paginaAtual,
+                        totalPaginas = viewModel.totalPaginas,
+                        onPaginaSelecionada = { novaPagina ->
+                            viewModel.mudarPagina(novaPagina)
+                        }
+                    )
+                }
             }
         }
     }

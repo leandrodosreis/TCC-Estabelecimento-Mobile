@@ -20,6 +20,12 @@ fun HistoricoRoute(
     onNavigate: (String) -> Unit,
     onLogout: () -> Unit
 ) {
+    // Carregamento inicial
+    // Busca os dados quando entrar no Histórico
+    LaunchedEffect(Unit) {
+        viewModel.carregarHistorico()
+    }
+
     // Controla se a atualização foi iniciada manualmente
     var atualizacaoManual by remember {
         mutableStateOf(false)
